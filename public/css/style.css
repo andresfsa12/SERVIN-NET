@@ -1,0 +1,77 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    --primary-color: #1c12ff;
+    --secondary-color: #007924;
+    --tertiary-color: #8e8e8e;
+}
+.container{
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+}
+
+    .container-logo{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 70%;
+        height: 100vh;
+        padding: 20px;
+    }
+        .logo_principal{
+            max-width: 50%;
+            height: auto;
+        }
+    .container-form{
+        display: flex;
+        flex-direction: column;
+        align-items: end;
+        justify-content: center;
+        width: 30%;
+        padding: 20px;
+    }
+        .container-login{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70%;
+            padding: 50px 10px 50px 10px;
+            border-radius: 50px 0px 0px 50px;
+            background-color: var(--secondary-color);
+        }
+            .container-login a{
+                display: inline-block;
+                text-decoration: none;
+                color: rgb(255, 255, 255);
+                margin-bottom: 10px;
+                font-size: 1rem;
+                font-weight: regular;
+            }
+            .container-login input{
+                width: 80%;
+                padding: 10px;
+                margin-bottom: 20px;
+                margin-top: 0px;
+                border: 1px solid black;
+                border-radius: 5px;
+            }
+            .btn{
+
+                width: auto;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                background-color: var(--tertiary-color);
+                color: white;
+                cursor: pointer;
+                font-size: 1rem;
+            }
+                .btn:hover{
+                    background-color: #d8d8d8;
+                    color:var(--tertiary-color);
+                }
+        
