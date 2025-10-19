@@ -51,6 +51,14 @@
                 background-color: rgb(255, 255, 255);
                 padding: 10px;
             }
+            .header-menu ul li a.menu-selected{
+                text-decoration: none;
+                color: white;
+                font-size: 1.1rem;
+                font-weight: regular;
+                background-color: var(--primary-color);
+                padding: 10px;
+            }
             .header-menu ul li a:hover{
                 background-color: var(--primary-color);
                 color: #ffffff;
@@ -144,6 +152,14 @@
                     font-size: 1rem;
                     font-weight: regular;
                     background-color: rgb(255, 255, 255);
+                    padding: 8px;
+                }
+                .content-menu-variables ul li a.variable-selected{
+                    text-decoration: none;
+                    color: white;
+                    font-size: 1rem;
+                    font-weight: regular;
+                    background-color: var(--tertiary-color);
                     padding: 8px;
                 }
                 .content-menu-variables ul li a:hover{

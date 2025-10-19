@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuarios</title>
-    <link rel="stylesheet" href="../../public/css/ingreso_datos.css">
+    <title>Informe SUI</title>
+    <link rel="stylesheet" href="../../public/css/informe_sui.css">
 </head>
     <body>
         <nav class="header-container">
@@ -15,8 +15,8 @@
                 <ul>
                     <li><a href="/inicio">Inicio</a></li>
                     <li><a href="/panel_control">Panel de control</a></li>
-                    <li><a href="/ingreso_datos" class="menu-selected">Ingreso de datos</a></li>
-                    <li><a href="/informes_sui">Informes SUI</a></li>
+                    <li><a href="/ingreso_datos" >Ingreso de datos</a></li>
+                    <li><a href="/informes_sui" class="menu-selected">Informes SUI</a></li>
                 </ul>
             </nav>
             <nav class="header-usuario">
@@ -42,48 +42,26 @@
                         <option value="2026">Vigencia 2026</option>
                     </select>
              </div>
-             <div class="content-menu-variables">
-                <ul>
-                    <li><a href="#" class="variable-selected">Usuarios</a></li>
-                    <li><a href="#">PQR</a></li>
-                    <li><a href="#">Agua producida</a></li>
-                    <li><a href="#">Agua facturada</a></li>
-                    <li><a href="#">Caudal concesionado</a></li>
-                    <li><a href="#">Volumen vertido</a></li>
-                    <li><a href="#">Financiero</a></li>
-                    <li><a href="#">Operativo</a></li>
-                    <li><a href="#">Tarifario</a></li>
-                </ul>
-             </div>
+
              <div class="select-content-periodo">
                 <select name="periodo" class="select-periodo" id="periodo" >
-                    <option value="enero">Enero</option>
-                    <option value="febrero">Febrero</option>
-                    <option value="marzo">Marzo</option>
-                    <option value="abril">Abril</option>
-                    <option value="mayo">Mayo</option>
-                    <option value="junio">Junio</option>
-                    <option value="julio">Julio</option>
-                    <option value="agosto">Agosto</option>
-                    <option value="septiembre">Septiembre</option>
-                    <option value="octubre">Octubre</option>
-                    <option value="noviembre">Noviembre</option>
-                    <option value="diciembre">Diciembre</option>
+                     <option value="" disabled selected hidden>Seleccione el formato</option>
+                    <option value="tp">Tablero de planeación</option>
+                    <option value="tcp">Tablero de control de la planeación</option>
+                    <option value="tam">Tablero de acciones de mejora</option>
+                    <option value="tcam">Tablero de control de acciones de mejora</option>
+                    <option value="tp">Indicadores por APS</option>
+                    <option value="tcp">Indicadores por sistema</option>
+                    <option value="tam">Indicadores por prestador</option>
+                    <option value="tcam">Personal directivo</option>
                 </select>
              </div>   
              <div class="content-input">
                 <div class="input-usuarios">
                     <div class="input-usuarios-title">
-                        <h2>USUARIOS</h2>
+                        <h2>Tablero de planeación</h2>
                     </div>
-                    
-                    <a>Usuarios Acueducto:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Usuarios Alcantarillado:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Total viviendas:</a>
-                    <input type="text" placeholder="Digita numero de viviendas">
-                    <button class="btn btn-guardar">Guardar</button>
+                    <button class="btn btn-guardar">Descargar</button>
                 </div>
              </div>
         </nav>
