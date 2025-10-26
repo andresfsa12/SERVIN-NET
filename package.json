@@ -1,0 +1,33 @@
+{
+  "name": "servin-net",
+  "version": "1.0.0",
+  "description": "Backend para la gestión del Plan de Gestión y Resultados (PGR).",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andresfsa12/SERVIN-NET.git"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "backend"
+  ],
+  "author": "Andres Fabian Sarmiento Andapina",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andresfsa12/SERVIN-NET/issues"
+  },
+  "homepage": "https://github.com/andresfsa12/SERVIN-NET#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql2": "^3.15.3",
+    "sequelize": "^6.37.7"
+  }
+}

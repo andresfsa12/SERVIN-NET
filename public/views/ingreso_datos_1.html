@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agua facturada</title>
-    <link rel="stylesheet" href="../../public/css/ingreso_datos.css">
+    <title>Usuarios</title>
+    <link rel="stylesheet" href="../css/ingreso_datos.css">
 </head>
     <body>
         <nav class="header-container">
             <div class="header-logo">
-                <img src="../../public/Images/Servin Net Logo_Principal.png" class="logo-header" alt="SERVIN NET Logo">
+                <img src="../Images/Servin Net Logo_Principal.png" class="logo-header" alt="SERVIN NET Logo">
             </div>
             <nav class="header-menu">
                 <ul>
@@ -44,10 +44,10 @@
              </div>
              <div class="content-menu-variables">
                 <ul>
-                    <li><a href="#">Usuarios</a></li>
-                    <li><a href="#" >PQR</a></li>
-                    <li><a href="#" >Agua producida</a></li>
-                    <li><a href="#" class="variable-selected">Agua facturada</a></li>
+                    <li><a href="#" class="variable-selected">Usuarios</a></li>
+                    <li><a href="#">PQR</a></li>
+                    <li><a href="#">Agua producida</a></li>
+                    <li><a href="#">Agua facturada</a></li>
                     <li><a href="#">Caudal concesionado</a></li>
                     <li><a href="#">Volumen vertido</a></li>
                     <li><a href="#">Financiero</a></li>
@@ -74,10 +74,15 @@
              <div class="content-input">
                 <div class="input-usuarios">
                     <div class="input-usuarios-title">
-                        <h2>AGUA FACTURADA</h2>
+                        <h2>USUARIOS</h2>
                     </div>
-                    <a>M3 facturados:</a>
-                    <input type="text" placeholder="-">
+                    
+                    <a>Usuarios Acueducto:</a>
+                    <input type="text" placeholder="Digita usuarios">
+                    <a>Usuarios Alcantarillado:</a>
+                    <input type="text" placeholder="Digita usuarios">
+                    <a>Total viviendas:</a>
+                    <input type="text" placeholder="Digita numero de viviendas">
                     <button class="btn btn-guardar">Guardar</button>
                 </div>
              </div>

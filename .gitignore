@@ -1,0 +1,43 @@
+# 1. DEPENDENCIAS Y ARTEFACTOS DE COMPILACIÓN
+##############################################
+
+# Ignorar la carpeta de módulos de Node.js (BACKEND Y FRONTEND si se usan)
+/node_modules
+/package-lock.json
+
+# Ignorar archivos temporales o de compilación específicos de Node/npm
+/npm-debug.log
+/yarn-error.log
+
+# Ignorar los archivos generados si se usa un bundler (ej: Webpack/Rollup en el futuro)
+/dist
+/build
+/out
+
+# 2. ENTORNO Y DATOS SENSIBLES
+##############################################
+
+# Ignorar variables de entorno y secretos. 🚨 CRÍTICO para el RNF-006 (Seguridad)
+.env
+.env.local
+
+# Ignorar certificados SSL/TLS si se usan en desarrollo local
+*.pem
+*.key
+
+# 3. ARCHIVOS DE LA BASE DE DATOS Y DEL ORM
+##############################################
+
+# Ignorar archivos de SQLite (si se usa) o bases de datos de prueba
+*.sqlite
+*.db
+
+# 4. ARCHIVOS DE ENTORNO DE DESARROLLO (VS Code)
+##############################################
+
+# Ignorar la carpeta de configuración de VS Code (settings, launch)
+.vscode/
+
+# Ignorar archivos de swap o temporales
+*.swp
+*~
