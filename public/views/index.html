@@ -12,15 +12,16 @@
             <img src="../Images/Servin Net Logo_Principal.png" class="logo_principal" alt="SERVIN NET Logo">
         </section>
         <div class="container-form">
-            <div class="container-login">
+            <form id="loginForm" class="container-login">
                 <a>Usuario:</a>
-                <input type="text" placeholder="Escribe tu usuario" class="input">
+                <input type="text" id="username" name="username" placeholder="Escribe tu usuario" class="input" required>
                 <a>Contraseña:</a>
-                <input type="password" placeholder="*********" class="input">
-                <button class="btn btn-login">Iniciar Sesión</button>
-            </div>
+                <input type="password" id="password" name="password" placeholder="*********" class="input" required>
+                <button type="submit" class="btn btn-login">Iniciar Sesión</button>
+            </form>
         </div>
         
     </div>
+<script src="../js/login.js"></script>
 </body>
 </html>
