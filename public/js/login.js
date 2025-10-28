@@ -21,7 +21,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (data.success) {
-            window.location.href = '/panel_control';
+            window.location.href = '/views/inicio/panel_control.html';
         } else {
             alert(data.message || 'Error de autenticación');
         }

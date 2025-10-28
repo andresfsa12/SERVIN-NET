@@ -35,11 +35,11 @@ app.use((err, req, res, next) => {
 });
 
 // Ruta para el panel de control
-app.get('/panel_control', (req, res) => {
+app.get('/views/inicio/panel_control.html', (req, res) => {
     if (!req.session.userId) {
         return res.redirect('/');
     }
-    res.sendFile(path.join(__dirname, 'public/views/panel_de_control.html'));
+    res.sendFile(path.join(__dirname, 'public/views/inicio/panel_de_control.html'));
 });
 
 app.listen(PORT, () => {
