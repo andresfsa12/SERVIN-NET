@@ -7,6 +7,20 @@
     --secondary-color: #007924;
     --tertiary-color: #8e8e8e;
 }
+
+.app-section{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    
+}
+.login-section{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 .container{
     display: flex;
     flex-direction: row;
