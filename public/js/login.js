@@ -83,3 +83,29 @@ window.addEventListener('popstate', (e) => {
     const section = (e.state && e.state.section) || 'panel_control';
     loadContent(section);
 });
+
+// Cerrar sesión
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutButton = document.getElementById('logout-btn');
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Redirigir a la página de inicio o login
+                    window.location.href = '/';
+                } else {
+                    alert('Error al cerrar sesión');
+                }
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                alert('Error de conexión. No se pudo cerrar sesión.');
+            }
+        });
+    }
+});

@@ -22,4 +22,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Cerrar sesión
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Error al cerrar sesión' });
+        }
+        res.json({ success: true });
+    });
+});
+
 module.exports = router;
