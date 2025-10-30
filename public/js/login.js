@@ -34,11 +34,24 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
 async function loadMenu() {
     try {
-        const res = await fetch('/views/menu/index.html');
-        if (!res.ok) throw new Error('No se pudo cargar el menú');
-        const html = await res.text();
+        const menuResponse = await fetch('/views/menu/index.html');
         const menuContainer = document.getElementById('menu-container');
-        menuContainer.innerHTML = html;
+        menuContainer.innerHTML = await menuResponse.text();
+
+        // Actualizar datos del usuario en el menú
+        const userSpan = document.getElementById('usuario-menu');
+        const idSpan = document.getElementById('id-menu');
+        
+        if (userSpan && idSpan) {
+            // Obtener datos de sesión
+            const sessionResponse = await fetch('/api/user-session');
+            const sessionData = await sessionResponse.json();
+            
+            if (sessionData.success) {
+                userSpan.textContent = sessionData.userName;
+                idSpan.textContent = `ID: ${sessionData.userId}`;
+            }
+        }
 
         // listeners para opciones del menú
         document.querySelectorAll('#menu a').forEach(link => {
@@ -49,6 +62,9 @@ async function loadMenu() {
                 setActiveMenuItem(e.target);
             });
         });
+
+        // Attach logout handler for the newly injected menu
+        attachLogoutHandler();
     } catch (error) {
         console.error('Error al cargar el menú:', error);
     }
@@ -84,28 +100,47 @@ window.addEventListener('popstate', (e) => {
     loadContent(section);
 });
 
-// Cerrar sesión
-document.addEventListener('DOMContentLoaded', () => {
-    const logoutButton = document.getElementById('logout-btn');
-
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async () => {
-            try {
-                const response = await fetch('/logout', {
-                    method: 'POST',
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    // Redirigir a la página de inicio o login
-                    window.location.href = '/';
-                } else {
-                    alert('Error al cerrar sesión');
-                }
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-                alert('Error de conexión. No se pudo cerrar sesión.');
-            }
+// Helper: función que realiza el logout en el servidor y redirige
+async function performLogout() {
+    try {
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         });
+        const data = await response.json();
+        if (data && data.success) {
+            // limpiar almacenamiento local / sessionStorage si usas
+            try { sessionStorage.clear(); localStorage.clear(); } catch (e) {}
+            // redirigir a inicio
+            window.location.href = '/';
+        } else {
+            alert(data.message || 'Error al cerrar sesión');
+        }
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        alert('Error de conexión. No se pudo cerrar sesión.');
     }
+}
+
+// Adjunta el handler al botón logout existente en el menú inyectado
+function attachLogoutHandler() {
+    const menuContainer = document.getElementById('menu-container');
+    if (!menuContainer) return;
+
+    // Delegación: escucha clicks dentro del contenedor del menú
+    // y responde cuando el target es el botón logout.
+    // Esto cubre casos donde el botón se inyecta dinámicamente.
+    menuContainer.addEventListener('click', function onMenuClick(e) {
+        const target = e.target;
+        if (target && (target.id === 'logout-btn' || target.matches('[data-action="logout"]'))) {
+            e.preventDefault();
+            performLogout();
+        }
+    }, { once: false });
+}
+
+// Si el menú ya estaba cargado al recargar la página, aún queremos
+// asegurar que el logout funcione: attach cuando DOMContentLoaded.
+document.addEventListener('DOMContentLoaded', () => {
+    attachLogoutHandler();
 });

@@ -1,3 +1,41 @@
+<script>
+window.addEventListener('load', function() {
+    // Función para manejar el cierre de sesión
+    async function handleLogout() {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Limpiar datos de sesión si los hay
+                sessionStorage.clear();
+                localStorage.clear();
+                
+                // Redirigir al inicio
+                window.location.href = '/';
+            } else {
+                alert('Error al cerrar sesión');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al intentar cerrar sesión');
+        }
+    }
+
+    // Agregar el evento al botón una vez que el DOM esté cargado
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = handleLogout;
+    }
+});
+</script>
+
 <nav id="menu">
     <nav class="header-container">
             <div class="header-logo">
@@ -12,8 +50,8 @@
 
     <nav class="header-usuario">
                 <span>Usuario:</span>
-                <span>Empresas Públicas de Baraya ESP</span>
-                <span>NIT: 999.999.999</span>
+                <span id="usuario-menu">Empresas Públicas de Baraya ESP</span>
+                <span id="id-menu">NIT: 999.999.999</span>
                 <button id="logout-btn" class="btn btn-logout">Cerrar Sesión</button>
             </nav>
         </nav>

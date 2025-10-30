@@ -1,11 +1,10 @@
 const connection = require('../config/connection');
-const bcrypt = require('bcrypt');
 
 async function validateUser(username, password) {
     try {
         const conn = await connection;
         const [rows] = await conn.execute(
-            'SELECT id_usuario, password FROM usuarios WHERE username = ?',
+            'SELECT id_usuario, nombre, password FROM usuarios WHERE username = ?',
             [username]
         );
 
@@ -15,23 +14,15 @@ async function validateUser(username, password) {
 
         const user = rows[0];
 
-         // Detectar si la contraseña almacenada es un hash bcrypt
-        const isHashed = typeof user.password === 'string' && user.password.startsWith('$2');
-
-        if (isHashed) {
-            const match = await bcrypt.compare(password, user.password);
-            if (!match) return { success: false, message: 'Contraseña incorrecta' };
-        } else {
-            // Comparación directa (temporal — migrar a hashes lo antes posible)
-            if (user.password !== password) {
-                return { success: false, message: 'Contraseña incorrecta' };
-            }
+        if (user.password !== password) {
+            return { success: false, message: 'Contraseña incorrecta' };
         }
 
-        return { 
-            success: true, 
-            userId: rows[0].id_usuario,
-            message: 'Login exitoso' 
+        return {
+            success: true,
+            userId: user.id_usuario,
+            userName: user.nombre,
+            message: 'Login exitoso'
         };
     } catch (error) {
         console.error('Error en la validación:', error);
