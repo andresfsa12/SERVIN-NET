@@ -29,7 +29,8 @@ router.get('/api/user-session', (req, res) => {
         res.json({
             success: true,
             userId: req.session.userId,
-            userName: req.session.userName
+            userName: req.session.userName,
+            userRole: req.session.userRole
         });
     } else {
         res.status(401).json({ 
@@ -55,21 +56,21 @@ router.get('/panel_control', (req, res) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/');
     }
-    res.sendFile(path.join(__dirname, '../../public/views/panel_control/index.html'));
+    res.sendFile(path.join(__dirname, '../../public/views/cliente/panel_control/index.html'));
 });
 
 router.get('/informes_sui', (req, res) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/');
     }
-    res.sendFile(path.join(__dirname, '../../public/views/informes_sui/index.html'));
+    res.sendFile(path.join(__dirname, '../../public/views/cliente/informes_sui/index.html'));
 });
 
 router.get('/ingreso_datos', (req, res) => {
     if (!req.session || !req.session.userId) {
         return res.redirect('/');
     }
-    res.sendFile(path.join(__dirname, '../../public/views/ingreso_datos/index.html'));
+    res.sendFile(path.join(__dirname, '../../public/views/cliente/ingreso_datos/index.html'));
 });
 
 module.exports = router;

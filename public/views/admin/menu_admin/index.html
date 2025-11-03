@@ -1,0 +1,59 @@
+<script>
+window.addEventListener('load', function() {
+    // Función para manejar el cierre de sesión
+    async function handleLogout() {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // Limpiar datos de sesión si los hay
+                sessionStorage.clear();
+                localStorage.clear();
+                
+                // Redirigir al inicio
+                window.location.href = '/';
+            } else {
+                alert('Error al cerrar sesión');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al intentar cerrar sesión');
+        }
+    }
+
+    // Agregar el evento al botón una vez que el DOM esté cargado
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = handleLogout;
+    }
+});
+</script>
+
+<nav id="menu">
+    <nav class="header-container">
+            <div class="header-logo">
+                <img src="../Images/Servin Net Logo_Principal.png" class="logo-header" alt="SERVIN NET Logo">
+            </div>
+            
+    <ul class="menu-navbar">
+        <li><a href="#" data-section="usuarios" class="active li-usuarios">Usuarios</a></li>
+        <li><a href="#" data-section="registrar" class="li-registrar">Registrar</a></li>
+        <li><a href="#" data-section="modificar" class="li-modificar">Modificar</a></li>
+        <li><a href="#" data-section="desactivar" class="li-desactivar">Desactivar</a></li>
+    </ul>
+
+    <nav class="header-usuario">
+                <span>Usuario:</span>
+                <span id="usuario-menu">Admin</span>
+                <span id="id-menu">NIT</span>
+                <button id="logout-btn" class="btn btn-logout">Cerrar Sesión</button>
+            </nav>
+        </nav>
+</nav>

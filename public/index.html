@@ -1,37 +1,36 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SERVIN NET</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/menu.css"> <!-- <-- añadir -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SERVIN NET</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/menu.css">
 </head>
 <body>
     <div id="app-section" class="app-section">
-    <div class="container">
-        <!-- Sección de login -->
-        <div id="login-section" class="login-section">
-            <section class="container-logo">
-                <img src="/Images/Servin Net Logo_Principal.png" class="logo_principal" alt="SERVIN NET Logo">
-            </section>
-            <div class="container-form">
-                <form id="loginForm" class="container-login">
-                    <a>Usuario:</a>
-                    <input type="text" id="username" name="username" placeholder="Escribe tu usuario" class="input" required>
-                    <a>Contraseña:</a>
-                    <input type="password" id="password" name="password" placeholder="*********" class="input" required>
-                    <button type="submit" class="btn btn-login">Iniciar Sesión</button>
-                </form>
+        <div class="container">
+            <!-- Sección de login -->
+            <div id="login-section" class="login-section">
+                <section class="container-logo">
+                    <img src="/Images/Servin Net Logo_Principal.png" class="logo_principal" alt="SERVIN NET Logo">
+                </section>
+                <div class="container-form">
+                    <form id="loginForm" class="container-login">
+                        <a>Usuario:</a>
+                        <input type="text" id="username" name="username" placeholder="Escribe tu usuario" class="input" required>
+                        <a>Contraseña:</a>
+                        <input type="password" id="password" name="password" placeholder="*********" class="input" required>
+                        <button type="submit" class="btn btn-login">Iniciar Sesión</button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
         <!-- Contenedor del menú -->
         <div id="menu-container" style="display: none;"></div>
 
         <!-- Contenedor principal para el contenido dinámico -->
         <div id="content-container" style="display: none;"></div>
-   
     </div>
 
     <script src="/js/login.js"></script>

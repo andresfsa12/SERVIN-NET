@@ -4,7 +4,7 @@ async function validateUser(username, password) {
     try {
         const conn = await connection;
         const [rows] = await conn.execute(
-            'SELECT id_usuario, nombre, password FROM usuarios WHERE username = ?',
+            'SELECT id_usuario, nombre, password, rol_fk FROM usuarios WHERE username = ?',
             [username]
         );
 
@@ -22,6 +22,7 @@ async function validateUser(username, password) {
             success: true,
             userId: user.id_usuario,
             userName: user.nombre,
+            userRole: user.rol_fk, 
             message: 'Login exitoso'
         };
     } catch (error) {
