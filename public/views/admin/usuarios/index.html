@@ -6,13 +6,12 @@
     <meta name="description" content="Consulta de usuarios SERVIN NET">
     <title>Gestión de Usuarios</title>
     <link rel="stylesheet" href="../../../css/usuarios.css">
-
 </head>
 <body>
     <nav class="content" role="navigation">
         <div class="content-principal">
             <div class="content-title">
-                <h1>USUARIOS</h1>
+                <h1>GESTIÓN DE USUARIOS</h1>
             </div>
             <div class="content-input">
                 <div class="consultar-usuarios">
@@ -44,6 +43,60 @@
             </div>
         </div>
     </nav>
+
+    <!-- Modal para editar usuario -->
+    <div id="modalEditarUsuario" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Editar Usuario</h2>
+            <form id="formEditarUsuario">
+                <input type="hidden" id="edit_id_usuario" name="id_usuario">
+                
+                <div class="form-group">
+                    <label for="edit_nombre">Nombre:</label>
+                    <input type="text" id="edit_nombre" name="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_rol_fk">Rol:</label>
+                    <select id="edit_rol_fk" name="rol_fk" required>
+                        <option value="1">Administrador</option>
+                        <option value="2">Cliente</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_segmento_fk">Segmento:</label>
+                    <input type="text" id="edit_segmento_fk" name="segmento_fk">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_cod_sui">Código SUI:</label>
+                    <input type="text" id="edit_cod_sui" name="cod_sui">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_cod_dane">Código DANE:</label>
+                    <input type="text" id="edit_cod_dane" name="cod_dane">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_email">Email:</label>
+                    <input type="email" id="edit_email" name="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_username">Usuario:</label>
+                    <input type="text" id="edit_username" name="username" required>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-save">Guardar Cambios</button>
+                    <button type="button" class="btn-cancel">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
     <!-- Debug log -->
     <script>

@@ -112,6 +112,81 @@ router.get('/api/usuarios', async (req, res) => {
     }
 });
 
+// Ruta para obtener un usuario específico
+router.get('/api/usuarios/:id', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ success: false, message: 'No hay sesión activa' });
+        }
+
+        const { id } = req.params;
+        const [usuarios] = await connection.execute(
+            'SELECT id_usuario, nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username FROM usuarios WHERE id_usuario = ?',
+            [id]
+        );
+
+        if (usuarios.length === 0) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        res.json({ success: true, usuario: usuarios[0] });
+    } catch (error) {
+        console.error('Error al obtener usuario:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+});
+
+// Ruta para actualizar usuario
+router.put('/api/usuarios/actualizar', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId || req.session.userRole !== 1) {
+            return res.status(401).json({ success: false, message: 'No autorizado' });
+        }
+
+        const { id_usuario, nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username } = req.body;
+
+        await connection.execute(
+            `UPDATE usuarios SET 
+                nombre = ?, 
+                estado = ?, 
+                rol_fk = ?, 
+                segmento_fk = ?, 
+                cod_sui = ?, 
+                cod_dane = ?, 
+                email = ?, 
+                username = ?
+            WHERE id_usuario = ?`,
+            [nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username, id_usuario]
+        );
+
+        res.json({ success: true, message: 'Usuario actualizado correctamente' });
+    } catch (error) {
+        console.error('Error al actualizar usuario:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
+    }
+});
+
+// Ruta para cambiar estado del usuario
+router.patch('/api/usuarios/estado', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId || req.session.userRole !== 1) {
+            return res.status(401).json({ success: false, message: 'No autorizado' });
+        }
+
+        const { id_usuario, estado } = req.body;
+
+        await connection.execute(
+            'UPDATE usuarios SET estado = ? WHERE id_usuario = ?',
+            [estado, id_usuario]
+        );
+
+        res.json({ success: true, message: 'Estado actualizado correctamente' });
+    } catch (error) {
+        console.error('Error al actualizar estado:', error);
+        res.status(500).json({ success: false, message: 'Error al actualizar estado' });
+    }
+});
+
 // Cerrar sesión
 router.post('/logout', (req, res) => {
     req.session.destroy(err => {
