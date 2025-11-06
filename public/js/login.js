@@ -25,8 +25,10 @@ async function handleLoginSubmit(e) {
         const resp = await fetch('/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'same-origin', // <- necesario para que el navegador almacene/mande la cookie de sesión
             body: JSON.stringify({ username, password })
         });
+        console.log('Respuesta /login status:', resp.status, 'headers:', [...resp.headers.entries()]);
 
         // Si credenciales invalidas el servidor responde 401
         if (!resp.ok) {
@@ -66,26 +68,18 @@ async function handleLoginSubmit(e) {
  * Comprueba sesión activa al cargar la página.
  * Si hay sesión válida, muestra menú según userRole.
  */
+
 async function initSessionIfExists() {
     try {
-        const res = await fetch('/api/user-session');
-        if (!res.ok) return;
-        const sessionData = await res.json();
-        // Mostrar en consola el rol cuando existe sesión activa
-        console.log('Sesión activa - rol del usuario:', sessionData.userRole);
-
-        if (sessionData && sessionData.success) {
-            // Ocultar login y mostrar la app
-            showAppContainers();
-            // Normalizar rol y fallback a 2
-            let role = Number(sessionData.userRole);
-            if (!Number.isInteger(role) || (role !== 1 && role !== 2)) {
-                role = 2;
-            }
-            // Cargar menú y contenido por defecto según rol
-            await loadMenu(role);
-            await loadContent(role === 1 ? 'usuarios' : 'panel_control');
-        }
+        const res = await fetch('/api/user-session', {
+            credentials: 'same-origin' 
+        }); 
+        
+        if (!res.ok)
+            console.debug('Servidor respondió:', res.status, 'No hay sesión activa.');
+            return  ; // Si devuelve 401 (no hay sesión), simplemente retorna y el login queda visible
+        
+                
     } catch (err) {
         console.debug('No hay sesión activa:', err);
     }
@@ -181,14 +175,54 @@ async function loadContent(section) {
         const html = await resp.text();
         document.getElementById('content-container').innerHTML = html;
 
-        // Actualizar historial y marcar activo
-        history.pushState({ section }, '', `/${section}`);
-        const activeLink = document.querySelector(`#menu a[data-section="${section}"]`);
-        if (activeLink) setActiveMenuItem(activeLink);
+        // Al terminar de inyectar la vista:
+        if (section === 'usuarios') {
+            await ensureUsuariosScriptLoaded(); // garantiza que el script quedó evaluado
+            window.initUsuarios();              // inicializa la vista
+        }
     } catch (err) {
         console.error('Error loadContent:', err);
-        document.getElementById('content-container').innerHTML = `<p>Error al cargar contenido: ${err.message}</p>`;
     }
+}
+
+async function ensureUsuariosScriptLoaded() {
+    if (typeof window.initUsuarios === 'function') return;
+
+    await loadExternalScript('/js/usuarios.js?v=' + Date.now());
+
+    // Esperar por evento o polling hasta 2s
+    let ready = false;
+    const onReady = () => { ready = true; };
+    window.addEventListener('usuarios:ready', onReady, { once: true });
+
+    const t0 = performance.now();
+    while (!ready && typeof window.initUsuarios !== 'function' && performance.now() - t0 < 2000) {
+        await new Promise(r => setTimeout(r, 50));
+    }
+    window.removeEventListener('usuarios:ready', onReady);
+
+    if (typeof window.initUsuarios !== 'function') {
+        // Diagnóstico adicional
+        console.error('Scripts presentes:', Array.from(document.scripts).map(s => s.src));
+        throw new Error('initUsuarios no disponible tras cargar /js/usuarios.js');
+    }
+}
+
+function loadExternalScript(src) {
+    return new Promise((resolve, reject) => {
+        const exists = Array.from(document.scripts).some(s => s.src && s.src.endsWith(src.split('?')[0]));
+        if (exists && typeof window.initUsuarios === 'function') return resolve();
+
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => {
+            console.log('Script cargado:', src);
+            resolve();
+        };
+        s.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+        document.body.appendChild(s);
+    });
 }
 
 /**
@@ -223,7 +257,10 @@ function setActiveMenuItem(activeLink) {
  */
 async function updateUserInfo() {
     try {
-        const resp = await fetch('/api/user-session');
+        const resp = await fetch('/api/user-session', {
+             // AÑADIR ESTO: Garantiza que la cookie de sesión se adjunte
+            credentials: 'same-origin'
+        });
         if (!resp.ok) return;
         const data = await resp.json();
         if (!data.success) return;

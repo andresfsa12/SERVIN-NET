@@ -1,51 +1,56 @@
 <!DOCTYPE html>
-<html lang="en-es">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio</title>
-    <link rel="stylesheet" href="../../../css/informe_sui.css">
-</head>
-    <body>
-      
-        <nav class="content">
-             <div class="content-principal">
-                <div class="content-title">
-                    <a>USUARIOS</a>
-                </div>
-                <div class="content-vigencia">
-                    <select name="vigencia" class="select-vigencia" id="vigencia">
-                        <option value="2020">Vigencia 2020</option>
-                        <option value="2021">Vigencia 2021</option>
-                        <option value="2022">Vigencia 2022</option>
-                        <option value="2023">Vigencia 2023</option>
-                        <option value="2024">Vigencia 2024</option>
-                        <option value="2025">Vigencia 2025</option>
-                        <option value="2026">Vigencia 2026</option>
-                    </select>
-             </div>
+    <meta name="description" content="Consulta de usuarios SERVIN NET">
+    <title>Gestión de Usuarios</title>
+    <link rel="stylesheet" href="../../../css/usuarios.css">
 
-             <div class="select-content-periodo">
-                <select name="periodo" class="select-periodo" id="periodo" >
-                     <option value="" disabled selected hidden>Seleccione el formato</option>
-                    <option value="tp">Tablero de planeación</option>
-                    <option value="tcp">Tablero de control de la planeación</option>
-                    <option value="tam">Tablero de acciones de mejora</option>
-                    <option value="tcam">Tablero de control de acciones de mejora</option>
-                    <option value="tp">Indicadores por APS</option>
-                    <option value="tcp">Indicadores por sistema</option>
-                    <option value="tam">Indicadores por prestador</option>
-                    <option value="tcam">Personal directivo</option>
-                </select>
-             </div>   
-             <div class="content-input">
-                <div class="input-usuarios">
-                    <div class="input-usuarios-title">
-                        <h2>Tablero de planeación</h2>
+</head>
+<body>
+    <nav class="content" role="navigation">
+        <div class="content-principal">
+            <div class="content-title">
+                <h1>USUARIOS</h1>
+            </div>
+            <div class="content-input">
+                <div class="consultar-usuarios">
+                    <div class="table-container">
+                        <table id="usuariosTable" class="table" aria-label="Lista de usuarios">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Rol</th>
+                                    <th scope="col">Segmento</th>
+                                    <th scope="col">Código SUI</th>
+                                    <th scope="col">Código DANE</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Usuario</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosTableBody">
+                                <!-- Indicador de carga -->
+                                <tr>
+                                    <td colspan="10" class="loading">Cargando usuarios...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <button class="btn btn-guardar">Descargar</button>
                 </div>
-             </div>
-        </nav>
-    </body>
+            </div>
+        </div>
+    </nav>
+</body>
+    <!-- Debug log -->
+    <script>
+        console.log('HTML cargado, elementos:', {
+            tbody: document.getElementById('usuariosTableBody'),
+            table: document.getElementById('usuariosTable')
+        });
+    </script>
+
 </html>
