@@ -180,6 +180,24 @@ async function loadContent(section) {
             await ensureUsuariosScriptLoaded(); // garantiza que el script quedó evaluado
             window.initUsuarios();              // inicializa la vista
         }
+
+        //Registrar usuario
+        if (section === 'registrar') {
+            if (typeof window.initRegistrar !== 'function') {
+                await loadExternalScript('/js/registrar.js?v=' + Date.now());
+                // esperar a que el script notifique que está listo (opcional)
+                let t = 0;
+                while (typeof window.initRegistrar !== 'function' && t < 40) {
+                    await new Promise(r => setTimeout(r, 50));
+                    t++;
+                }
+            }
+            if (typeof window.initRegistrar === 'function') {
+                window.initRegistrar();
+            } else {
+                console.error('initRegistrar no disponible tras cargar /js/registrar.js');
+            }
+        }
     } catch (err) {
         console.error('Error loadContent:', err);
     }

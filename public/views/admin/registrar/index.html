@@ -1,51 +1,87 @@
 <!DOCTYPE html>
-<html lang="en-es">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar</title>
-    <link rel="stylesheet" href="../../../css/informe_sui.css">
+    <title>Registrar Usuario</title>
+    <link rel="stylesheet" href="../../../css/usuarios.css">
 </head>
-    <body>
-      
-        <nav class="content">
-             <div class="content-principal">
-                <div class="content-title">
-                    <a>REGISTRAR</a>
-                </div>
-                <div class="content-vigencia">
-                    <select name="vigencia" class="select-vigencia" id="vigencia">
-                        <option value="2020">Vigencia 2020</option>
-                        <option value="2021">Vigencia 2021</option>
-                        <option value="2022">Vigencia 2022</option>
-                        <option value="2023">Vigencia 2023</option>
-                        <option value="2024">Vigencia 2024</option>
-                        <option value="2025">Vigencia 2025</option>
-                        <option value="2026">Vigencia 2026</option>
-                    </select>
-             </div>
+<body>
+    <nav class="content">
+        <div class="content-principal">
+            <div class="content-title">
+                <h3>REGISTRAR USUARIO</h3>
+            </div>
 
-             <div class="select-content-periodo">
-                <select name="periodo" class="select-periodo" id="periodo" >
-                     <option value="" disabled selected hidden>Seleccione el formato</option>
-                    <option value="tp">Tablero de planeación</option>
-                    <option value="tcp">Tablero de control de la planeación</option>
-                    <option value="tam">Tablero de acciones de mejora</option>
-                    <option value="tcam">Tablero de control de acciones de mejora</option>
-                    <option value="tp">Indicadores por APS</option>
-                    <option value="tcp">Indicadores por sistema</option>
-                    <option value="tam">Indicadores por prestador</option>
-                    <option value="tcam">Personal directivo</option>
-                </select>
-             </div>   
-             <div class="content-input">
-                <div class="input-usuarios">
-                    <div class="input-usuarios-title">
-                        <h2>Tablero de planeación</h2>
+            <div class="form-container">
+                <form id="formRegistrarUsuario" novalidate>
+                    <div class="form-content">
+                    <!-- Si id_usuario es autoincrement en BD, puedes ocultar este campo -->
+                    <div class="form-group">
+                        <label for="reg_id_usuario">ID </label>
+                        <input type="number" id="reg_id_usuario" name="id_usuario" >
                     </div>
-                    <button class="btn btn-guardar">Descargar</button>
+
+                    <div class="form-group">
+                        <label for="reg_nombre">Nombre</label>
+                        <input type="text" id="reg_nombre" name="nombre" required autocomplete="name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_estado">Estado</label>
+                        <select id="reg_estado" name="estado" required>
+                            <option value="Activo" selected>Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_rol_fk">Rol</label>
+                        <select id="reg_rol_fk" name="rol_fk" required>
+                            <option value="1">Administrador</option>
+                            <option value="2" selected>Cliente</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_segmento_fk">Segmento</label>
+                        <input type="text" id="reg_segmento_fk" name="segmento_fk">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_cod_sui">Código SUI</label>
+                        <input type="text" id="reg_cod_sui" name="cod_sui" autocomplete="off">
+                    </div>
                 </div>
-             </div>
-        </nav>
-    </body>
+                <div class="form-content">
+                    <div class="form-group">
+                        <label for="reg_cod_dane">Código DANE</label>
+                        <input type="text" id="reg_cod_dane" name="cod_dane" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_email">Email</label>
+                        <input type="email" id="reg_email" name="email" required autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_username">Usuario</label>
+                        <input type="text" id="reg_username" name="username" required autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg_password">Contraseña</label>
+                        <input type="password" id="reg_password" name="password" required autocomplete="new-password" minlength="8">
+                    </div>
+                </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-save">Registrar</button>
+                        <button type="reset" class="btn btn-cancel">Limpiar</button>
+                    </div>
+                    <div id="reg_msg" class="form-message" aria-live="polite"></div>
+                </form>
+            </div>
+        </div>
+    </nav>
+</body>
 </html>

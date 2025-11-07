@@ -1,33 +1,74 @@
 const connection = require('../config/connection');
+const bcrypt = require('bcryptjs');
 
 async function validateUser(username, password) {
     try {
-        const conn = await connection;
-        const [rows] = await conn.execute(
-            'SELECT id_usuario, nombre, password, rol_fk FROM usuarios WHERE username = ?',
+        console.log('validateUser - Iniciando validación para usuario:', username);
+        
+        // Buscar usuario por username
+        const [usuarios] = await connection.execute(
+            'SELECT id_usuario, nombre, password, rol_fk, estado FROM usuarios WHERE username = ? LIMIT 1',
             [username]
         );
 
-        if (!rows || rows.length === 0) {
-            return { success: false, message: 'Usuario no encontrado' };
+        console.log('validateUser - Usuarios encontrados:', usuarios.length);
+
+        // Si no existe el usuario
+        if (usuarios.length === 0) {
+            console.log('validateUser - Usuario no encontrado');
+            return {
+                success: false,
+                message: 'Usuario o contraseña incorrectos'
+            };
         }
 
-        const user = rows[0];
+        const usuario = usuarios[0];
+        console.log('validateUser - Usuario encontrado:', {
+            id: usuario.id_usuario,
+            nombre: usuario.nombre,
+            estado: usuario.estado,
+            rol: usuario.rol_fk,
+            passwordHash: usuario.password ? 'presente' : 'ausente'
+        });
 
-        if (user.password !== password) {
-            return { success: false, message: 'Contraseña incorrecta' };
+        // Verificar si el usuario está activo
+        if (usuario.estado !== 'Activo') {
+            console.log('validateUser - Usuario inactivo');
+            return {
+                success: false,
+                message: 'Usuario inactivo. Contacte al administrador.'
+            };
         }
 
+        // Comparar contraseña ingresada con el hash almacenado
+        console.log('validateUser - Comparando contraseñas...');
+        const passwordMatch = await bcrypt.compare(password, usuario.password);
+        console.log('validateUser - Contraseña coincide:', passwordMatch);
+
+        if (!passwordMatch) {
+            console.log('validateUser - Contraseña incorrecta');
+            return {
+                success: false,
+                message: 'Usuario o contraseña incorrectos'
+            };
+        }
+
+        // Si todo es correcto, retornar datos del usuario
+        console.log('validateUser - Login exitoso');
         return {
             success: true,
-            userId: user.id_usuario,
-            userName: user.nombre,
-            userRole: user.rol_fk, 
+            userId: usuario.id_usuario,
+            userName: usuario.nombre,
+            userRole: usuario.rol_fk,
             message: 'Login exitoso'
         };
+
     } catch (error) {
-        console.error('Error en la validación:', error);
-        return { success: false, message: 'Error en el servidor' };
+        console.error('Error en validateUser:', error);
+        return {
+            success: false,
+            message: 'Error en el servidor al validar usuario'
+        };
     }
 }
 

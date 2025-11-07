@@ -268,20 +268,39 @@ tr:hover {
     color: #000;
 }
 
+.form-container {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+    width: 20%;
+    padding: 10px;
+    background-color: rgb(240, 240, 240);
+    border-radius: 15px;
+
+}
+form{
+    margin: 10px;
+}
+.form-content {
+    width: 100%;
+}
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    padding: 0px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     font-weight: bold;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 8px;
+    padding: 5px;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
@@ -322,6 +341,34 @@ tr:hover {
 .btn-edit {
     background: #2196F3;
     color: white;
+}
+.btn-edit:hover {
+    background: #1074c5;
+    color: white;
+}
+
+/* Botón de activar/desactivar según estado */
+.btn-toggle {
+    color: #fff;
+    transition: background-color .2s ease-in-out, filter .2s ease-in-out;
+}
+
+.btn-toggle[data-estado="Activo"] {
+    background-color: #f44336; /* verde */
+}
+
+.btn-toggle[data-estado="Activo"]:hover {
+    background-color: #c92826;
+    filter: brightness(0.98);
+}
+
+.btn-toggle[data-estado="Inactivo"] {
+    background-color: #4CAF50; /* rojo */
+}
+
+.btn-toggle[data-estado="Inactivo"]:hover {
+    background-color: #43A047;
+    filter: brightness(0.98);
 }
 
 .btn-delete {

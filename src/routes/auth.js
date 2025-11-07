@@ -3,11 +3,15 @@ const router = express.Router();
 const path = require('path');
 const connection = require('../config/connection');
 const { validateUser } = require('../controllers/authController');
+const bcrypt = require('bcryptjs');
 
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
+    console.log('POST /login - Intento de login:', { username, password: password ? '***' : 'vacío' });
+    
     if (!username || !password) {
+        console.log('POST /login - Credenciales incompletas');
         return res.status(400).json({ 
             success: false, 
             message: 'Usuario y contraseña son requeridos' 
@@ -16,6 +20,10 @@ router.post('/login', async (req, res) => {
 
     try {
         const result = await validateUser(username, password);
+        console.log('POST /login - Resultado validación:', { 
+            success: result.success, 
+            message: result.message 
+        });
         
         if (result.success) {
             // Guardar datos en la sesión
@@ -23,29 +31,31 @@ router.post('/login', async (req, res) => {
             req.session.userName = result.userName;
             req.session.userRole = result.userRole;
 
+            console.log('POST /login - Sesión creada:', {
+                userId: req.session.userId,
+                userName: req.session.userName,
+                userRole: req.session.userRole
+            });
+
             // Forzar guardado de sesión antes de responder
             req.session.save((err) => {
                 if (err) {
-                    console.error('Error guardando sesión:', err);
+                    console.error('POST /login - Error guardando sesión:', err);
                     return res.status(500).json({
                         success: false,
                         message: 'Error al guardar la sesión'
                     });
                 }
 
-                console.log('Sesión guardada exitosamente:', {
-                    userId: req.session.userId,
-                    userName: req.session.userName,
-                    userRole: req.session.userRole
-                });
-
+                console.log('POST /login - Sesión guardada exitosamente');
                 res.json(result);
             });
         } else {
+            console.log('POST /login - Credenciales inválidas');
             res.status(401).json(result);
         }
     } catch (error) {
-        console.error('Error en login:', error);
+        console.error('POST /login - Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error en el servidor'
@@ -218,6 +228,71 @@ router.get('/ingreso_datos', (req, res) => {
         return res.redirect('/');
     }
     res.sendFile(path.join(__dirname, '../../public/views/cliente/ingreso_datos/index.html'));
+});
+
+// Crear usuario (sólo admin)
+router.post('/api/usuarios', async (req, res) => {
+    try {
+        // Requiere sesión y rol admin (1)
+        if (!req.session || !req.session.userId || Number(req.session.userRole) !== 1) {
+            return res.status(401).json({ success: false, message: 'No autorizado' });
+        }
+
+        const {
+            id_usuario,
+            nombre,
+            estado,
+            rol_fk,
+            segmento_fk,
+            cod_sui,
+            cod_dane,
+            email,
+            username,
+            password
+        } = req.body;
+
+        if (!nombre || !email || !username || !password || !rol_fk || !estado) {
+            return res.status(400).json({ success: false, message: 'Faltan campos requeridos' });
+        }
+
+        // Validar duplicados (username o email)
+        const [dups] = await connection.execute(
+            'SELECT id_usuario FROM usuarios WHERE username = ? OR email = ? LIMIT 1',
+            [username, email]
+        );
+        if (dups.length > 0) {
+            return res.status(409).json({ success: false, message: 'Usuario o email ya existe' });
+        }
+
+        // Hash de contraseña
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(password, salt);
+
+        // Insert
+        const [result] = await connection.execute(
+            `INSERT INTO usuarios (
+                ${id_usuario ? 'id_usuario,' : ''} nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username, password
+            ) VALUES (
+                ${id_usuario ? '?,' : ''} ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )`,
+            id_usuario
+                ? [id_usuario, nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username, password_hash]
+                : [nombre, estado, rol_fk, segmento_fk, cod_sui, cod_dane, email, username, password_hash]
+        );
+
+        return res.json({
+            success: true,
+            message: 'Usuario creado',
+            id: result.insertId || id_usuario
+        });
+    } catch (err) {
+        console.error('POST /api/usuarios - Error:', err);
+        // MySQL duplicate
+        if (err && err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ success: false, message: 'Usuario o email duplicado' });
+        }
+        return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
 });
 
 
