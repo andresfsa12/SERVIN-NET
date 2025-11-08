@@ -11,10 +11,11 @@
         <nav class="content">
              <div class="content-principal">
                 <div class="content-title">
-                    <a>PLAN DE GESTIÓN Y RESULTADOS</a>
+                    <a>REGISTRO DE DATOS</a>
                 </div>
-                <div class="content-vigencia">
+                <div class="content-menu-variables">
                     <select name="vigencia" class="select-vigencia" id="vigencia">
+                        <option value="" disabled selected>Vigencia</option>
                         <option value="2020">Vigencia 2020</option>
                         <option value="2021">Vigencia 2021</option>
                         <option value="2022">Vigencia 2022</option>
@@ -23,22 +24,23 @@
                         <option value="2025">Vigencia 2025</option>
                         <option value="2026">Vigencia 2026</option>
                     </select>
-             </div>
-             <div class="content-menu-variables">
-                <ul>
-                    <li><a href="#" class="variable-selected">Usuarios</a></li>
-                    <li><a href="#">PQR</a></li>
-                    <li><a href="#">Agua producida</a></li>
-                    <li><a href="#">Agua facturada</a></li>
-                    <li><a href="#">Caudal concesionado</a></li>
-                    <li><a href="#">Volumen vertido</a></li>
-                    <li><a href="#">Financiero</a></li>
-                    <li><a href="#">Operativo</a></li>
-                    <li><a href="#">Tarifario</a></li>
-                </ul>
-             </div>
-             <div class="select-content-periodo">
+           
+                    <select name="variables" class="select-variable" id="variable">
+                        <option value="" disabled selected>Variables</option>
+                        <option value="usuarios" class="variable-selected">Usuarios</option>
+                        <option value="pqr">PQR</option>
+                        <option value="agua_producida">Agua producida</option>
+                        <option value="agua_facturada">Agua facturada</option>
+                        <option value="caudal_concesionado">Caudal concesionado</option>
+                        <option value="irca">IRCA</option>
+                        <option value="metas">Metas</option>
+                        <option value="financiero">Financiero</option>
+                        <option value="operativo">Operativo</option>
+                        <option value="tarifario">Tarifario</option>
+                    </select>
+ 
                 <select name="periodo" class="select-periodo" id="periodo" >
+                    <option value="" disabled selected>Periodo</option>
                     <option value="enero">Enero</option>
                     <option value="febrero">Febrero</option>
                     <option value="marzo">Marzo</option>
@@ -54,19 +56,7 @@
                 </select>
              </div>   
              <div class="content-input">
-                <div class="input-usuarios">
-                    <div class="input-usuarios-title">
-                        <h2>USUARIOS</h2>
-                    </div>
-                    
-                    <a>Usuarios Acueducto:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Usuarios Alcantarillado:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Total viviendas:</a>
-                    <input type="text" placeholder="Digita numero de viviendas">
-                    <button class="btn btn-guardar">Guardar</button>
-                </div>
+
              </div>
         </nav>
     </body>
