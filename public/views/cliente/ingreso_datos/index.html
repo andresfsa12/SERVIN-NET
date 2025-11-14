@@ -27,18 +27,24 @@
            
                     <select name="variables" class="select-variable" id="variable">
                         <option value="" disabled selected>Variables</option>
-                        <option value="usuarios" class="variable-selected">Usuarios</option>
+                        <option value="usuarios">Suscriptores</option>
+                        <option value="continuidad">Continuidad</option>
                         <option value="pqr">PQR</option>
-                        <option value="agua_producida">Agua producida</option>
-                        <option value="agua_facturada">Agua facturada</option>
-                        <option value="caudal_concesionado">Caudal concesionado</option>
-                        <option value="irca">IRCA</option>
-                        <option value="metas">Metas</option>
-                        <option value="financiero">Financiero</option>
-                        <option value="operativo">Operativo</option>
-                        <option value="tarifario">Tarifario</option>
+                        <option value="micromedicion">Micromedicion</option>
+                        <option value="caudal">Caudal</option>
+                        <option value="vertimiento">Vertimiento</option>
+                        <option value="lodos">Lodos</option>
+                        <option value="redacueducto">Red Acueducto</option>
+                        <option value="redalcantarillado">Red Alcantarillado</option>
+                        <option value="energia">Energia</option>
+                        <option value="personal">Personal</option>
                     </select>
- 
+                    <select name="servicio" class="select-servicio" id="servicio" >
+                        <option value="" disabled selected>Servicio</option>
+                        <option value="acueducto">Acueducto</option>
+                        <option value="alcantarillado">Alcantarillado</option>
+                        <option value="aa">Ambos</option>
+                    </select>
                 <select name="periodo" class="select-periodo" id="periodo" >
                     <option value="" disabled selected>Periodo</option>
                     <option value="enero">Enero</option>
@@ -53,9 +59,11 @@
                     <option value="octubre">Octubre</option>
                     <option value="noviembre">Noviembre</option>
                     <option value="diciembre">Diciembre</option>
+                    <option value="year">Anual</option>
                 </select>
+                <button type="button" class="btn-consultar" id="btn-consultar">Consultar</button>
              </div>   
-             <div class="content-input">
+             <div class="content-input" id="content-input">
 
              </div>
         </nav>

@@ -295,6 +295,190 @@ router.post('/api/usuarios', async (req, res) => {
     }
 });
 
+// GET - Consultar suscriptores
+router.get('/api/suscriptores', async (req, res) => {
+    try {
+        console.log('[GET /api/suscriptores] Iniciando consulta');
+        
+        if (!req.session || !req.session.userId) {
+            console.log('[GET /api/suscriptores] Sin sesión');
+            return res.status(401).json({ success: false, message: 'No autorizado' });
+        }
 
+        const { vigencia, mes, servicio } = req.query;
+        const userId = req.session.userId;
+
+        console.log('[GET /api/suscriptores] Parámetros:', { userId, vigencia, mes, servicio });
+
+        let query = 'SELECT id_suscriptores, id_usuarioFK, id_vigenciaFK, mes, servicio, suscriptores FROM suscriptores WHERE id_usuarioFK = ?';
+        const params = [userId];
+
+        if (vigencia) { query += ' AND id_vigenciaFK = ?'; params.push(vigencia); }
+        if (mes) { query += ' AND mes = ?'; params.push(mes); }
+        if (servicio) { query += ' AND servicio = ?'; params.push(servicio); }
+
+        query += ' ORDER BY id_suscriptores DESC';
+
+        console.log('[GET /api/suscriptores] Query:', query);
+        console.log('[GET /api/suscriptores] Params:', params);
+
+        const [rows] = await connection.execute(query, params);
+
+        console.log('[GET /api/suscriptores] Registros encontrados:', rows.length);
+
+        res.json({ 
+            success: true, 
+            suscriptores: rows
+        });
+
+    } catch (error) {
+        console.error('[GET /api/suscriptores] Error:', error);
+        console.error('[GET /api/suscriptores] Stack:', error.stack);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error interno del servidor: ' + error.message 
+        });
+    }
+});
+
+// POST sin suscriptores_n1
+router.post('/api/suscriptores', async (req, res) => {
+    try {
+        console.log('[POST /api/suscriptores] Iniciando creación');
+        console.log('[POST /api/suscriptores] Body:', req.body);
+        
+        if (!req.session?.userId) return res.status(401).json({ success: false, message: 'No autorizado' });
+
+        const { vigencia, mes, servicio, suscriptores } = req.body;
+        const userId = req.session.userId;
+
+        console.log('[POST /api/suscriptores] Datos a insertar:', {
+            userId,
+            vigencia,
+            mes,
+            servicio,
+            suscriptores,
+        });
+
+        // Validar campos requeridos
+        if (!vigencia || !mes || !servicio) {
+            console.log('[POST /api/suscriptores] Campos faltantes');
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Faltan campos requeridos: vigencia, mes, servicio' 
+            });
+        }
+
+        // Verificar si ya existe un registro para evitar duplicados
+        const [existing] = await connection.execute(
+            `SELECT id_suscriptores FROM suscriptores 
+             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+            [userId, vigencia, mes, servicio]
+        );
+
+        if (existing.length > 0) {
+            console.log('[POST /api/suscriptores] Registro duplicado encontrado');
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Ya existe un registro para estos parámetros' 
+            });
+        }
+
+        const [result] = await connection.execute(
+            `INSERT INTO suscriptores 
+             (id_usuarioFK, id_vigenciaFK, mes, servicio, suscriptores)
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+                userId, 
+                vigencia, 
+                mes, 
+                servicio, 
+                suscriptores || 0, 
+            ]
+        );
+
+        console.log('[POST /api/suscriptores] Registro creado con ID:', result.insertId);
+
+        res.json({ 
+            success: true, 
+            message: 'Suscriptor creado correctamente',
+            id: result.insertId
+        });
+
+    } catch (error) {
+        console.error('[POST /api/suscriptores] Error:', error);
+        console.error('[POST /api/suscriptores] Stack:', error.stack);
+        
+        // Manejar error de clave duplicada
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Ya existe un registro con estos datos' 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al crear suscriptor: ' + error.message 
+        });
+    }
+});
+
+// PUT sin suscriptores_n1
+router.put('/api/suscriptores/:id', async (req, res) => {
+    try {
+        console.log('[PUT /api/suscriptores] Iniciando actualización');
+        console.log('[PUT /api/suscriptores] ID:', req.params.id);
+        console.log('[PUT /api/suscriptores] Body:', req.body);
+        
+        if (!req.session?.userId) return res.status(401).json({ success: false, message: 'No autorizado' });
+
+        const { id } = req.params;
+        const { suscriptores } = req.body;
+        const userId = req.session.userId;
+
+        console.log('[PUT /api/suscriptores] Datos a actualizar:', {
+            id,
+            userId,
+            suscriptores,
+        });
+
+        // Verificar que el registro pertenece al usuario
+        const [existing] = await connection.execute(
+            'SELECT id_suscriptores FROM suscriptores WHERE id_suscriptores = ? AND id_usuarioFK = ?',
+            [id, userId]
+        );
+
+        if (existing.length === 0) {
+            console.log('[PUT /api/suscriptores] Registro no encontrado o no pertenece al usuario');
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Registro no encontrado o no tiene permisos' 
+            });
+        }
+
+        const [result] = await connection.execute(
+            `UPDATE suscriptores 
+             SET suscriptores = ?
+             WHERE id_suscriptores = ? AND id_usuarioFK = ?`,
+            [suscriptores || 0, id, userId]
+        );
+
+        console.log('[PUT /api/suscriptores] Filas afectadas:', result.affectedRows);
+
+        res.json({ 
+            success: true, 
+            message: 'Suscriptor actualizado correctamente' 
+        });
+
+    } catch (error) {
+        console.error('[PUT /api/suscriptores] Error:', error);
+        console.error('[PUT /api/suscriptores] Stack:', error.stack);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al actualizar: ' + error.message 
+        });
+    }
+});
 
 module.exports = router;

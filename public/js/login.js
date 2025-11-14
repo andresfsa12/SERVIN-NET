@@ -144,7 +144,6 @@ async function loadContent(section) {
     try {
         if (!section) return;
         
-
         const adminMap = {
             'usuarios': 'usuarios',
             'registrar': 'registrar',
@@ -158,9 +157,7 @@ async function loadContent(section) {
             'ingreso_datos': 'ingreso_datos'
         };
 
-        // Verificar si es una sección de admin basado en el mapeo
         const isAdmin = Object.keys(adminMap).includes(section);
-
         let basePath = isAdmin ? '/views/admin/' : '/views/cliente/';
         let mapped = isAdmin ? (adminMap[section] || section) : (clientMap[section] || section);
         const fullPath = `${basePath}${mapped}/index.html`;
@@ -175,70 +172,123 @@ async function loadContent(section) {
         const html = await resp.text();
         document.getElementById('content-container').innerHTML = html;
 
-        // Al terminar de inyectar la vista:
+        // Inicializar scripts específicos de cada sección
         if (section === 'usuarios') {
-            await ensureUsuariosScriptLoaded(); // garantiza que el script quedó evaluado
-            window.initUsuarios();              // inicializa la vista
-        }
-
-        //Registrar usuario
-        if (section === 'registrar') {
-            if (typeof window.initRegistrar !== 'function') {
-                await loadExternalScript('/js/registrar.js?v=' + Date.now());
-                // esperar a que el script notifique que está listo (opcional)
-                let t = 0;
-                while (typeof window.initRegistrar !== 'function' && t < 40) {
-                    await new Promise(r => setTimeout(r, 50));
-                    t++;
-                }
-            }
+            await ensureUsuariosScriptLoaded();
+            window.initUsuarios();
+        } else if (section === 'registrar') {
+            await ensureScriptLoaded('/js/registrar.js', 'initRegistrar', 'registrar:ready');
             if (typeof window.initRegistrar === 'function') {
                 window.initRegistrar();
+            }
+        } else if (section === 'ingreso_datos') {
+            console.log('Inicializando ingreso_datos...');
+            await ensureScriptLoaded('/js/ingreso_datos.js', 'initIngresoDatos', 'ingresoDatos:ready');
+            if (typeof window.initIngresoDatos === 'function') {
+                console.log('Llamando a initIngresoDatos');
+                window.initIngresoDatos();
             } else {
-                console.error('initRegistrar no disponible tras cargar /js/registrar.js');
+                console.error('initIngresoDatos no disponible tras cargar /js/ingreso_datos.js');
             }
         }
+
     } catch (err) {
         console.error('Error loadContent:', err);
     }
 }
 
-async function ensureUsuariosScriptLoaded() {
-    if (typeof window.initUsuarios === 'function') return;
+// Función genérica para cargar scripts
+async function ensureScriptLoaded(scriptPath, functionName, eventName) {
+    console.log('[loader] ensureScriptLoaded:', { scriptPath, functionName });
 
-    await loadExternalScript('/js/usuarios.js?v=' + Date.now());
+    // Ya disponible
+    if (typeof window[functionName] === 'function') {
+        console.log('[loader] función ya disponible:', functionName);
+        return;
+    }
 
-    // Esperar por evento o polling hasta 2s
+    // Normalizar nombre base para detectar duplicados
+    const baseName = scriptPath.split('?')[0].split('/').pop();
+    const already = Array.from(document.scripts).find(s => s.src && s.src.includes(baseName));
+    if (already) {
+        console.log('[loader] script tag ya existe, esperando evaluación...');
+    } else {
+        await loadExternalScript(scriptPath.includes('?') ? scriptPath : (scriptPath + '?v=' + Date.now()));
+    }
+
+    // Esperar evento o función
     let ready = false;
-    const onReady = () => { ready = true; };
-    window.addEventListener('usuarios:ready', onReady, { once: true });
+    const onReady = () => {
+        console.log('[loader] evento recibido:', eventName);
+        ready = true;
+    };
+    window.addEventListener(eventName, onReady, { once: true });
 
     const t0 = performance.now();
-    while (!ready && typeof window.initUsuarios !== 'function' && performance.now() - t0 < 2000) {
-        await new Promise(r => setTimeout(r, 50));
+    while (!ready && typeof window[functionName] !== 'function' && performance.now() - t0 < 3000) {
+        await new Promise(r => setTimeout(r, 60));
     }
-    window.removeEventListener('usuarios:ready', onReady);
+    window.removeEventListener(eventName, onReady);
 
-    if (typeof window.initUsuarios !== 'function') {
-        // Diagnóstico adicional
-        console.error('Scripts presentes:', Array.from(document.scripts).map(s => s.src));
-        throw new Error('initUsuarios no disponible tras cargar /js/usuarios.js');
+    if (typeof window[functionName] !== 'function') {
+        console.error('[loader] fallo al cargar:', functionName);
+        console.error('[loader] scripts actuales:', Array.from(document.scripts).map(s => s.src));
+        throw new Error(functionName + ' no disponible');
     }
+
+    console.log('[loader] función cargada:', functionName);
 }
 
 function loadExternalScript(src) {
     return new Promise((resolve, reject) => {
-        const exists = Array.from(document.scripts).some(s => s.src && s.src.endsWith(src.split('?')[0]));
-        if (exists && typeof window.initUsuarios === 'function') return resolve();
+        console.log('[loader] insertando script:', src);
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => {
+            console.log('[loader] script onload:', src);
+            // Pequeño delay para evaluación
+            setTimeout(resolve, 50);
+        };
+        s.onerror = (e) => {
+            console.error('[loader] error script:', src, e);
+            reject(new Error('No se pudo cargar ' + src));
+        };
+        document.body.appendChild(s);
+    });
+}
+
+async function ensureUsuariosScriptLoaded() {
+    return ensureScriptLoaded('/js/usuarios.js', 'initUsuarios', 'usuarios:ready');
+}
+
+function loadExternalScript(src) {
+    return new Promise((resolve, reject) => {
+        console.log('loadExternalScript: Verificando si existe:', src);
+        
+        const srcBase = src.split('?')[0];
+        const exists = Array.from(document.scripts).some(s => {
+            return s.src && s.src.includes(srcBase.split('/').pop());
+        });
+        
+        if (exists) {
+            console.log('loadExternalScript: Script ya existe en el DOM');
+        }
 
         const s = document.createElement('script');
         s.src = src;
         s.async = true;
         s.onload = () => {
-            console.log('Script cargado:', src);
-            resolve();
+            console.log('loadExternalScript: Script cargado exitosamente:', src);
+            // Dar un pequeño delay para que el script se evalúe
+            setTimeout(() => resolve(), 50);
         };
-        s.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+        s.onerror = (err) => {
+            console.error('loadExternalScript: Error al cargar script:', src, err);
+            reject(new Error(`No se pudo cargar ${src}`));
+        };
+        
+        console.log('loadExternalScript: Añadiendo script al DOM');
         document.body.appendChild(s);
     });
 }

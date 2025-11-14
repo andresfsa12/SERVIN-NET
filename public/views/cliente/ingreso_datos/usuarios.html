@@ -1,26 +1,190 @@
-<!DOCTYPE html> 
-<html lang="en-es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuarios</title>
     <link rel="stylesheet" href="../../../css/ingreso_datos.css">
+
 </head>
-    <body>
-        <div class="content-input">
-                <div class="input-usuarios">
-                    <div class="input-usuarios-title">
-                        <h2>USUARIOS</h2>
-                    </div>
-                    
-                    <a>Usuarios Acueducto:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Usuarios Alcantarillado:</a>
-                    <input type="text" placeholder="Digita usuarios">
-                    <a>Total viviendas:</a>
-                    <input type="text" placeholder="Digita numero de viviendas">
-                    <button class="btn btn-guardar">Guardar</button>
+<body>
+    <div class="suscriptores-container">
+        <div class="table-header">
+            <h2>Registro de Suscriptores</h2>
+            <button type="button" class="btn-action btn-nuevo" id="btnNuevo">Nuevo Registro</button>
+        </div>
+
+        <table class="suscriptores-table" id="tablaSuscriptores">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Vigencia</th>
+                    <th>Mes</th>
+                    <th>Servicio</th>
+                    <th>Suscriptores</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodySuscriptores">
+                <tr>
+                    <td colspan="6">No hay datos disponibles</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Insertar/Modificar -->
+    <div id="modalSuscriptor" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Nuevo Suscriptor</h2>
+            <form id="formSuscriptor">
+                <input type="hidden" id="id_suscriptor" name="id_suscriptor">
+
+                <div class="form-group">
+                    <label for="modal_vigencia">Vigencia</label>
+                    <input type="text" id="modal_vigencia" name="vigencia" readonly>
                 </div>
-             </div>
-   </body>
+
+                <div class="form-group">
+                    <label for="modal_mes">Mes</label>
+                    <input type="text" id="modal_mes" name="mes" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_servicio">Servicio</label>
+                    <input type="text" id="modal_servicio" name="servicio" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_suscriptores">Suscriptores</label>
+                    <input type="number" id="modal_suscriptores" name="suscriptores" required min="0">
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn-save">Guardar</button>
+                    <button type="button" class="btn-cancel" id="btnCancelar">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Función para renderizar datos en la tabla
+        window.renderSuscriptores = function(suscriptores) {
+            const tbody = document.getElementById('tbodySuscriptores');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!suscriptores || suscriptores.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">No se encontraron registros</td></tr>';
+                return;
+            }
+
+            suscriptores.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.id_suscriptores}</td>
+                    <td>${s.vigencia}</td>
+                    <td>${s.mes}</td>
+                    <td>${s.servicio}</td>
+                    <td>${s.suscriptores || 0}</td>
+                    <td>
+                        <button class="btn-action btn-editar" data-id="${s.id_suscriptores}">Editar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Agregar listeners a botones de editar
+            document.querySelectorAll('.btn-editar').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    editarSuscriptor(id, suscriptores);
+                });
+            });
+        };
+
+        // Función para abrir modal de nuevo registro
+        document.getElementById('btnNuevo')?.addEventListener('click', () => {
+            const vigencia = document.getElementById('vigencia')?.value;
+            const mes = document.getElementById('periodo')?.value;
+            const servicio = document.getElementById('servicio')?.value;
+
+            document.getElementById('modalTitle').textContent = 'Nuevo Suscriptor';
+            document.getElementById('id_suscriptor').value = '';
+            document.getElementById('modal_vigencia').value = vigencia || '';
+            document.getElementById('modal_mes').value = mes || '';
+            document.getElementById('modal_servicio').value = servicio || '';
+            document.getElementById('modal_suscriptores').value = '';
+            
+            document.getElementById('modalSuscriptor').style.display = 'block';
+        });
+
+        // Función para editar suscriptor
+        function editarSuscriptor(id, suscriptores) {
+            const suscriptor = suscriptores.find(s => s.id_suscriptores == id);
+            if (!suscriptor) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Suscriptor';
+            document.getElementById('id_suscriptor').value = suscriptor.id_suscriptores;
+            document.getElementById('modal_vigencia').value = suscriptor.vigencia;
+            document.getElementById('modal_mes').value = suscriptor.mes;
+            document.getElementById('modal_servicio').value = suscriptor.servicio;
+            document.getElementById('modal_suscriptores').value = suscriptor.suscriptores || '';
+            document.getElementById('modalSuscriptor').style.display = 'block';
+        }
+
+        // Cerrar modal
+        document.getElementById('closeModal')?.addEventListener('click', () => {
+            document.getElementById('modalSuscriptor').style.display = 'none';
+        });
+
+        document.getElementById('btnCancelar')?.addEventListener('click', () => {
+            document.getElementById('modalSuscriptor').style.display = 'none';
+        });
+
+        // Enviar formulario
+        document.getElementById('formSuscriptor')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                id_suscriptor: document.getElementById('id_suscriptor').value,
+                vigencia: document.getElementById('modal_vigencia').value,
+                mes: document.getElementById('modal_mes').value,
+                servicio: document.getElementById('modal_servicio').value,
+                suscriptores: document.getElementById('modal_suscriptores').value,
+            };
+
+            try {
+                const method = formData.id_suscriptor ? 'PUT' : 'POST';
+                const url = formData.id_suscriptor 
+                    ? '/api/suscriptores/' + formData.id_suscriptor 
+                    : '/api/suscriptores';
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.message);
+
+                alert(formData.id_suscriptor ? 'Registro actualizado' : 'Registro creado');
+                document.getElementById('modalSuscriptor').style.display = 'none';
+
+                // Recargar datos
+                document.getElementById('btn-consultar')?.click();
+
+            } catch (err) {
+                console.error('Error guardando:', err);
+                alert('Error: ' + err.message);
+            }
+        });
+    </script>
+</body>
 </html>
