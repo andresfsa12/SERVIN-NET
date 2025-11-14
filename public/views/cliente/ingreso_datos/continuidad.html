@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuidad</title>
+    <style>
+        .datos-container {
+            padding: 20px;
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .table-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        .btn-action {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .btn-nuevo {
+            background: #2196F3;
+            color: white;
+        }
+        .btn-nuevo:hover {
+            background: #1976D2;
+        }
+        .btn-editar {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-editar:hover {
+            background: #45a049;
+        }
+        .datos-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .datos-table thead {
+            background: #4CAF50;
+            color: white;
+        }
+        .datos-table th,
+        .datos-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .datos-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 25px;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+            line-height: 20px;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-save:hover {
+            background: #45a049;
+        }
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-cancel:hover {
+            background: #da190b;
+        }
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="datos-container">
+        <div class="table-header">
+            <h2 id="titulo-tabla">Datos</h2>
+            <button type="button" class="btn-action btn-nuevo" id="btnNuevo">Nuevo Registro</button>
+        </div>
+
+        <table class="datos-table" id="tablaDatos">
+            <thead id="theadDatos">
+                <!-- Se genera dinámicamente -->
+            </thead>
+            <tbody id="tbodyDatos">
+                <tr>
+                    <td colspan="10" class="no-data">Seleccione los filtros y presione Consultar</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Insertar/Modificar -->
+    <div id="modalDatos" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Nuevo Registro</h2>
+            <form id="formDatos">
+                <input type="hidden" id="id_registro" name="id_registro">
+
+                <div class="form-group">
+                    <label for="modal_vigencia">Vigencia</label>
+                    <input type="text" id="modal_vigencia" name="vigencia" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_mes">Mes/Periodo</label>
+                    <input type="text" id="modal_mes" name="mes" readonly>
+                </div>
+
+                <div class="form-group" id="group_servicio">
+                    <label for="modal_servicio">Servicio</label>
+                    <input type="text" id="modal_servicio" name="servicio" readonly>
+                </div>
+
+                <!-- Los campos específicos se agregan dinámicamente aquí -->
+                <div id="campos-dinamicos"></div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn-save">Guardar</button>
+                    <button type="button" class="btn-cancel" id="btnCancelar">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Este script se inicializa desde ingreso_datos.js
+        console.log('[continuidad.html] Cargado');
+    </script>
+</body>
+</html>

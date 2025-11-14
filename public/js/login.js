@@ -182,18 +182,34 @@ async function loadContent(section) {
                 window.initRegistrar();
             }
         } else if (section === 'ingreso_datos') {
-            console.log('Inicializando ingreso_datos...');
-            await ensureScriptLoaded('/js/ingreso_datos.js', 'initIngresoDatos', 'ingresoDatos:ready');
+            console.log('[loadContent] Cargando ingreso_datos...');
+            await loadExternalScript('/js/ingreso_datos.js?v=' + Date.now());
+            
+            // Esperar a que se emita el evento de ready
+            await new Promise((resolve) => {
+                if (typeof window.initIngresoDatos === 'function') {
+                    console.log('[loadContent] initIngresoDatos ya disponible');
+                    resolve();
+                } else {
+                    window.addEventListener('ingresoDatos:ready', () => {
+                        console.log('[loadContent] Evento ingresoDatos:ready recibido');
+                        resolve();
+                    }, { once: true });
+                }
+            });
+
+            console.log('[loadContent] Ejecutando initIngresoDatos...');
             if (typeof window.initIngresoDatos === 'function') {
-                console.log('Llamando a initIngresoDatos');
                 window.initIngresoDatos();
             } else {
-                console.error('initIngresoDatos no disponible tras cargar /js/ingreso_datos.js');
+                console.error('[loadContent] initIngresoDatos no está definido');
             }
         }
 
     } catch (err) {
         console.error('Error loadContent:', err);
+        document.getElementById('content-container').innerHTML = 
+            '<p style="color:red;padding:20px;">Error al cargar el contenido</p>';
     }
 }
 

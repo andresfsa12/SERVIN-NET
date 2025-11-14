@@ -66,7 +66,12 @@ app.use(helmet.contentSecurityPolicy({
 
 // Luego static y rutas
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/', require('./src/routes/auth'));
+const authRoutes = require('./src/routes/auth');
+const ingresoDatosRoutes = require('./src/routes/ingresoDatos');
+
+// Rutas
+app.use('/', authRoutes);
+app.use('/', ingresoDatosRoutes);
 
 // fallback para SPA (si quieres que index.html siempre se entregue)
 app.get('/', (req, res) => {
