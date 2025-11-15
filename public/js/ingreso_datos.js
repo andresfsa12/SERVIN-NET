@@ -33,6 +33,8 @@
             tabla: 'pqr',
             idColumn: 'id_pqr',
             titulo: 'PQR',
+            noAA: true,          // ← bloquear servicio "aa"
+            noYear: true,        // ← bloquear periodo "year"
             campos: [
                 { nombre: 'pqr_recibidas', label: 'PQR Recibidas', tipo: 'number' },
                 { nombre: 'pqr_resueltas', label: 'PQR Resueltas', tipo: 'number' },
@@ -226,19 +228,51 @@
             return;
         }
 
+        // Validar servicio según configuración
+        if (configActual.soloAcueducto && servicio !== 'acueducto') {
+            alert('Esta variable solo aplica para Acueducto');
+            return;
+        }
+
+        if (configActual.soloAlcantarillado && servicio !== 'alcantarillado') {
+            alert('Esta variable solo aplica para Alcantarillado');
+            return;
+        }
+
+        if (configActual.soloAA && servicio !== 'aa') {
+            alert('Esta variable solo aplica para Ambos servicios');
+            return;
+        }
+
         if (!configActual.soloAA && !servicio) {
             alert('Por favor seleccione un Servicio');
             return;
         }
 
-        document.getElementById('modalTitle').textContent = `Nuevo ${configActual.titulo}`;
-        document.getElementById('id_registro').value = '';
-        document.getElementById('modal_vigencia').value = vigencia;
-        document.getElementById('modal_mes').value = mes;
-        document.getElementById('modal_servicio').value = servicio || 'Ambos';
+        console.log('[abrirModalNuevo] Configuración:', configActual);
+        console.log('[abrirModalNuevo] Contexto:', contextActual);
 
-        // Limpiar campos dinámicos
+        // Actualizar título y campos básicos
+        const modalTitle = document.getElementById('modalTitle');
+        const idRegistro = document.getElementById('id_registro');
+        const modalVigencia = document.getElementById('modal_vigencia');
+        const modalMes = document.getElementById('modal_mes');
+        const modalServicio = document.getElementById('modal_servicio');
         const camposDinamicos = document.getElementById('campos-dinamicos');
+
+        if (!modalTitle || !idRegistro || !modalVigencia || !modalMes || !modalServicio || !camposDinamicos) {
+            console.error('[abrirModalNuevo] Elementos del modal no encontrados');
+            alert('Error: Elementos del formulario no encontrados. Recargue la página.');
+            return;
+        }
+
+        modalTitle.textContent = `Nuevo ${configActual.titulo}`;
+        idRegistro.value = '';
+        modalVigencia.value = vigencia;
+        modalMes.value = mes;
+        modalServicio.value = servicio || 'N/A';
+
+        // Generar campos dinámicos
         camposDinamicos.innerHTML = configActual.campos.map(campo => `
             <div class="form-group">
                 <label for="modal_${campo.nombre}">${campo.label}</label>
@@ -248,20 +282,21 @@
                     name="${campo.nombre}" 
                     ${campo.step ? `step="${campo.step}"` : ''}
                     min="0"
-                    value=""
+                    value="0"
                     required>
             </div>
         `).join('');
 
-        // Mostrar/ocultar campo servicio
-        const groupServicio = document.getElementById('group_servicio');
-        if (configActual.soloAA) {
-            groupServicio.style.display = 'none';
-        } else {
-            groupServicio.style.display = 'block';
-        }
+        console.log('[abrirModalNuevo] Campos generados:', configActual.campos.length);
 
-        document.getElementById('modalDatos').style.display = 'block';
+        // Mostrar modal
+        const modal = document.getElementById('modalDatos');
+        if (modal) {
+            modal.style.display = 'block';
+            console.log('[abrirModalNuevo] Modal abierto');
+        } else {
+            console.error('[abrirModalNuevo] Modal no encontrado');
+        }
     };
 
     // Función para editar registro
@@ -274,14 +309,29 @@
 
         const { vigencia, mes, servicio } = contextActual;
 
-        document.getElementById('modalTitle').textContent = `Editar ${configActual.titulo}`;
-        document.getElementById('id_registro').value = id;
-        document.getElementById('modal_vigencia').value = vigencia;
-        document.getElementById('modal_mes').value = mes;
-        document.getElementById('modal_servicio').value = servicio || 'Ambos';
+        console.log('[editarRegistro] Dato:', dato);
+
+        // Actualizar elementos del modal
+        const modalTitle = document.getElementById('modalTitle');
+        const idRegistro = document.getElementById('id_registro');
+        const modalVigencia = document.getElementById('modal_vigencia');
+        const modalMes = document.getElementById('modal_mes');
+        const modalServicio = document.getElementById('modal_servicio');
+        const camposDinamicos = document.getElementById('campos-dinamicos');
+
+        if (!modalTitle || !idRegistro || !modalVigencia || !modalMes || !modalServicio || !camposDinamicos) {
+            console.error('[editarRegistro] Elementos del modal no encontrados');
+            alert('Error: Elementos del formulario no encontrados');
+            return;
+        }
+
+        modalTitle.textContent = `Editar ${configActual.titulo}`;
+        idRegistro.value = id;
+        modalVigencia.value = vigencia;
+        modalMes.value = mes;
+        modalServicio.value = servicio || 'N/A';
 
         // Llenar campos dinámicos con valores
-        const camposDinamicos = document.getElementById('campos-dinamicos');
         camposDinamicos.innerHTML = configActual.campos.map(campo => `
             <div class="form-group">
                 <label for="modal_${campo.nombre}">${campo.label}</label>
@@ -296,20 +346,23 @@
             </div>
         `).join('');
 
-        // Mostrar/ocultar campo servicio
-        const groupServicio = document.getElementById('group_servicio');
-        if (configActual.soloAA) {
-            groupServicio.style.display = 'none';
-        } else {
-            groupServicio.style.display = 'block';
-        }
+        console.log('[editarRegistro] Modal llenado con datos');
 
-        document.getElementById('modalDatos').style.display = 'block';
+        // Mostrar modal
+        const modal = document.getElementById('modalDatos');
+        if (modal) {
+            modal.style.display = 'block';
+            console.log('[editarRegistro] Modal abierto');
+        }
     }
 
     // Función para cerrar modal
     window.cerrarModal = function() {
-        document.getElementById('modalDatos').style.display = 'none';
+        const modal = document.getElementById('modalDatos');
+        if (modal) {
+            modal.style.display = 'none';
+            console.log('[cerrarModal] Modal cerrado');
+        }
     };
 
     // Función para guardar datos
@@ -334,8 +387,6 @@
 
         try {
             const method = datos.id ? 'PUT' : 'POST';
-            
-            // CORRECCIÓN: Usar configActual.tabla en lugar de variable
             const endpoint = datos.id 
                 ? `/api/ingreso-datos/${configActual.tabla}/${datos.id}`
                 : `/api/ingreso-datos/${configActual.tabla}`;
@@ -417,37 +468,29 @@
             }
 
             const config = VARIABLES_CONFIG[variable];
-            if (!config) {
-                alert('Variable no configurada');
-                return;
-            }
+            if (!config) { alert('Variable no configurada'); return; }
 
-            // Validaciones de servicio
-            if (config.soloAcueducto && servicio !== 'acueducto') {
-                alert('Esta variable solo aplica para Acueducto');
-                return;
-            }
+            // Validaciones existentes
+            if (config.soloAcueducto && servicio !== 'acueducto') { alert('Esta variable solo aplica para Acueducto'); return; }
+            if (config.soloAlcantarillado && servicio !== 'alcantarillado') { alert('Esta variable solo aplica para Alcantarillado'); return; }
+            if (config.soloAA && servicio !== 'aa') { alert('Esta variable solo aplica para Ambos servicios'); return; }
+            if (config.periodoAnual && periodo !== 'year') { alert('Esta variable solo aplica para periodo Anual'); return; }
 
-            if (config.soloAlcantarillado && servicio !== 'alcantarillado') {
-                alert('Esta variable solo aplica para Alcantarillado');
-                return;
-            }
-
-            if (config.soloAA && servicio !== 'aa') {
-                alert('Esta variable solo aplica para Ambos servicios');
-                return;
-            }
-
-            if (config.periodoAnual && periodo !== 'year') {
-                alert('Esta variable solo aplica para periodo Anual');
-                return;
-            }
+            // Nuevas restricciones
+            if (config.noAA && servicio === 'aa') { alert('Esta variable no admite servicio "Ambos"'); return; }
+            if (config.noYear && periodo === 'year') { alert('Esta variable no admite periodo "Anual"'); return; }
 
             try {
                 // Cargar HTML de la vista
                 container.innerHTML = '<p style="padding:20px;text-align:center;">Cargando...</p>';
 
-                const resHtml = await fetch('/views/cliente/ingreso_datos/continuidad.html', {
+                const vista = variable === 'pqr'
+                  ? '/views/cliente/ingreso_datos/pqr.html'
+                  : (variable === 'continuidad'
+                      ? '/views/cliente/ingreso_datos/continuidad.html'
+                      : '/views/cliente/ingreso_datos/continuidad.html');
+
+                const resHtml = await fetch(vista, {
                     credentials: 'same-origin',
                     cache: 'no-store'
                 });
@@ -467,21 +510,43 @@
                     const closeModal = document.getElementById('closeModal');
                     const btnCancelar = document.getElementById('btnCancelar');
                     const formDatos = document.getElementById('formDatos');
+                    const modal = document.getElementById('modalDatos');
+
+                    console.log('[btnConsultar] Verificando elementos del modal:', {
+                        btnNuevo: !!btnNuevo,
+                        closeModal: !!closeModal,
+                        btnCancelar: !!btnCancelar,
+                        formDatos: !!formDatos,
+                        modal: !!modal
+                    });
 
                     if (btnNuevo) {
                         btnNuevo.addEventListener('click', window.abrirModalNuevo);
+                        console.log('[btnConsultar] Evento btnNuevo configurado');
                     }
                     if (closeModal) {
                         closeModal.addEventListener('click', window.cerrarModal);
+                        console.log('[btnConsultar] Evento closeModal configurado');
                     }
                     if (btnCancelar) {
                         btnCancelar.addEventListener('click', window.cerrarModal);
+                        console.log('[btnConsultar] Evento btnCancelar configurado');
                     }
                     if (formDatos) {
                         formDatos.addEventListener('submit', window.guardarRegistro);
+                        console.log('[btnConsultar] Evento formDatos configurado');
                     }
 
-                    console.log('[btnConsultar] Eventos configurados');
+                    // Cerrar modal al hacer clic fuera
+                    if (modal) {
+                        window.addEventListener('click', function(event) {
+                            if (event.target === modal) {
+                                window.cerrarModal();
+                            }
+                        });
+                    }
+
+                    console.log('[btnConsultar] Eventos del modal configurados');
                 }, 100);
 
                 // Consultar datos

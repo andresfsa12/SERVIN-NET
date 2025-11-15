@@ -190,4 +190,55 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
     }
 });
 
+// GET ya soporta pqr si es genérico. Asegurar validación periodo
+router.get('/api/ingreso-datos/pqr', requireAuth, async (req, res) => {
+  try {
+    const { vigencia, servicio, mes } = req.query;
+    if (mes === 'year') {
+      return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
+    }
+    const userId = req.session.userId;
+    const [rows] = await connection.execute(
+      `SELECT * FROM pqr WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+      [userId, vigencia, mes, servicio]
+    );
+    res.json({ success: true, datos: rows });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Error consulta: ' + e.message });
+  }
+});
+
+router.post('/api/ingreso-datos/pqr', requireAuth, async (req, res) => {
+  try {
+    const { vigencia, mes, servicio, pqr_recibidas, pqr_resueltas, pqr_no_resueltas } = req.body;
+    if (mes === 'year') return res.status(400).json({ success: false, message: 'Periodo inválido' });
+    const userId = req.session.userId;
+    const [r] = await connection.execute(
+      `INSERT INTO pqr (id_usuarioFK, id_vigenciaFK, mes, servicio, pqr_recibidas, pqr_resueltas, pqr_no_resueltas)
+       VALUES (?,?,?,?,?,?,?)`,
+      [userId, vigencia, mes, servicio, pqr_recibidas, pqr_resueltas, pqr_no_resueltas]
+    );
+    res.json({ success: true, id: r.insertId, message: 'Creado' });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Error crear: ' + e.message });
+  }
+});
+
+router.put('/api/ingreso-datos/pqr/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pqr_recibidas, pqr_resueltas, pqr_no_resueltas } = req.body;
+    const userId = req.session.userId;
+    const [r] = await connection.execute(
+      `UPDATE pqr SET pqr_recibidas = ?, pqr_resueltas = ?, pqr_no_resueltas = ?
+       WHERE id_pqr = ? AND id_usuarioFK = ?`,
+      [pqr_recibidas, pqr_resueltas, pqr_no_resueltas, id, userId]
+    );
+    if (!r.affectedRows) return res.status(404).json({ success: false, message: 'No encontrado' });
+    res.json({ success: true, message: 'Actualizado' });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Error actualizar: ' + e.message });
+  }
+});
+
 module.exports = router;

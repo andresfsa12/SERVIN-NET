@@ -2,20 +2,19 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuidad</title>
+    <title>PQR</title>
     <link rel="stylesheet" href="/css/ingreso_datos.css">
 </head>
 <body>
     <div class="datos-container">
         <div class="table-header">
-            <h2 id="titulo-tabla">Continuidad</h2>
+            <h2 id="titulo-tabla">PQR</h2>
             <button type="button" class="btn-action btn-nuevo" id="btnNuevo">Nuevo Registro</button>
         </div>
         <table class="datos-table" id="tablaDatos">
             <thead id="theadDatos"></thead>
             <tbody id="tbodyDatos">
-                <tr><td colspan="6" class="no-data">Sin datos. Use Consultar.</td></tr>
+                <tr><td colspan="8" class="no-data">Sin datos. Use Consultar.</td></tr>
             </tbody>
         </table>
     </div>
@@ -24,7 +23,7 @@
     <div id="modalDatos" class="modal">
         <div class="modal-content">
             <span class="close" id="closeModal">&times;</span>
-            <h2 id="modalTitle">Nuevo Registro</h2>
+            <h2 id="modalTitle">Nuevo PQR</h2>
             <form id="formDatos">
                 <input type="hidden" id="id_registro" name="id_registro">
                 
@@ -43,7 +42,7 @@
                     <input type="text" id="modal_servicio" name="servicio" readonly>
                 </div>
 
-                <!-- Campos específicos para cada variable -->
+                <!-- Campos dinámicos -->
                 <div id="campos-dinamicos"></div>
 
                 <div class="form-buttons">
@@ -53,10 +52,5 @@
             </form>
         </div>
     </div>
-
-    <script>
-        // Este script se inicializa desde ingreso_datos.js
-        console.log('[continuidad.html] Cargado');
-    </script>
 </body>
 </html>
