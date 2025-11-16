@@ -13,8 +13,8 @@ const idColumnMap = {
     suscriptores: 'id_suscriptores',
     continuidad: 'id_continuidad',
     pqr: 'id_pqr',
-    micromedicion: 'id_mm',  // ← Asegúrate de que esté aquí
-    caudal: 'id_caudal',
+    micromedicion: 'id_mm',
+    caudal: 'id_caudal',  // ← Asegúrate de que esté aquí
     vertimiento: 'id_vertimiento',
     lodos: 'id_lodos',
     redacueducto: 'id_redAcueducto',

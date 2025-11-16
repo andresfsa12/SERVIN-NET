@@ -522,6 +522,8 @@
                     vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
                 } else if (variable === 'micromedicion') {
                     vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
+                } else if (variable === 'caudal') {
+                    vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
                 } else if (variable === 'continuidad') {
                     vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
                 }
