@@ -33,7 +33,6 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         const { vigencia, servicio, mes } = req.query;
         const userId = req.session.userId;
 
-        // Validar tabla
         if (!tablasValidas.includes(tabla)) {
             return res.status(400).json({ success: false, message: `Tabla no válida: ${tabla}` });
         }
@@ -41,6 +40,20 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         // Reglas específicas
         if (tabla === 'pqr' && mes === 'year') {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
+        }
+
+        if (tabla === 'energia' && mes === 'year') {
+            return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
+        }
+
+        // VALIDACIÓN PERSONAL
+        if (tabla === 'personal') {
+            if (mes !== 'year') {
+                return res.status(400).json({ success: false, message: 'Personal solo admite periodo Anual (year)' });
+            }
+            if (servicio !== 'aa') {
+                return res.status(400).json({ success: false, message: 'Personal solo admite servicio "Ambos" (aa)' });
+            }
         }
 
         if (tabla === 'redacueducto') {
@@ -52,7 +65,6 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
-        // NUEVA VALIDACIÓN: Red de Alcantarillado
         if (tabla === 'redalcantarillado') {
             if (mes !== 'year') {
                 return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite periodo Anual (year)' });
@@ -62,9 +74,14 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        if (tabla === 'energia' && servicio === 'aa') {
+            return res.status(400).json({ success: false, message: 'Energía no admite servicio "Ambos". Seleccione acueducto o alcantarillado.' });
+        }
+
         let query = `SELECT * FROM ${tabla} WHERE id_usuarioFK = ? AND id_vigenciaFK = ?`;
         const params = [userId, vigencia];
 
+        // Personal usa "periodo", las demás usan "mes"
         if (tabla === 'personal') {
             query += ' AND periodo = ?';
             params.push(mes);
@@ -105,6 +122,50 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
 
+        // VALIDACIÓN Y RESTRICCIÓN PERSONAL
+        if (tabla === 'personal') {
+            if (data.mes !== 'year') {
+                return res.status(400).json({ success: false, message: 'Personal requiere periodo anual (year)' });
+            }
+            if (data.servicio !== 'aa') {
+                return res.status(400).json({ success: false, message: 'Personal requiere servicio "Ambos" (aa)' });
+            }
+            
+            // RESTRICCIÓN: Solo 1 registro anual por vigencia y usuario
+            const [existPersonal] = await connection.execute(
+                `SELECT id_personal FROM personal 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'year'`,
+                [userId, data.vigencia]
+            );
+            if (existPersonal.length) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya existe un registro anual de Personal para esta vigencia. Use la opción Editar.' 
+                });
+            }
+        }
+
+        if (tabla === 'energia') {
+            if (data.mes === 'year') {
+                return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
+            }
+            if (data.servicio !== 'acueducto' && data.servicio !== 'alcantarillado') {
+                return res.status(400).json({ success: false, message: 'Energía requiere servicio acueducto o alcantarillado (no ambos)' });
+            }
+            
+            const [existEnergia] = await connection.execute(
+                `SELECT id_energia FROM energia 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+                [userId, data.vigencia, data.mes, data.servicio]
+            );
+            if (existEnergia.length) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Ya existe un registro de Energía para ${data.servicio} en esta vigencia y mes. Use la opción Editar.` 
+                });
+            }
+        }
+
         if (tabla === 'redacueducto') {
             if (data.mes !== 'year') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo year' });
@@ -113,7 +174,6 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto requiere servicio acueducto' });
             }
             
-            // RESTRICCIÓN: Solo 1 registro anual por vigencia y usuario
             const [existRA] = await connection.execute(
                 `SELECT id_redAcueducto FROM redacueducto 
                  WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'year' AND servicio = 'acueducto'`,
@@ -127,7 +187,6 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
-        // NUEVA VALIDACIÓN Y RESTRICCIÓN: Red de Alcantarillado
         if (tabla === 'redalcantarillado') {
             if (data.mes !== 'year') {
                 return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere periodo year' });
@@ -136,7 +195,6 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
                 return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere servicio alcantarillado' });
             }
             
-            // RESTRICCIÓN: Solo 1 registro anual por vigencia y usuario
             const [existRAlc] = await connection.execute(
                 `SELECT id_red_alcantarillado FROM redalcantarillado 
                  WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'year' AND servicio = 'alcantarillado'`,
@@ -150,7 +208,6 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
-        // RESTRICCIÓN: Único vertimiento
         if (tabla === 'vertimiento') {
             const [existing] = await connection.execute(
                 `SELECT id_vertimiento FROM vertimiento
@@ -165,7 +222,6 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
-        // RESTRICCIÓN: Único lodos
         if (tabla === 'lodos') {
             const [existLodos] = await connection.execute(
                 `SELECT id_lodos FROM lodos
@@ -185,6 +241,7 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         data.id_usuarioFK = userId;
         data.id_vigenciaFK = data.vigencia;
         
+        // Personal usa "periodo", las demás usan "mes"
         if (tabla === 'personal') { 
             data.periodo = data.mes; 
             delete data.mes; 

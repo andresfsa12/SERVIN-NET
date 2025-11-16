@@ -129,7 +129,9 @@
             tabla: 'energia',
             idColumn: 'id_energia',
             titulo: 'Energía',
-            soloAlcantarillado: true,
+            noAA: true,                 // ← bloquear "aa"
+            noYear: true,               // ← bloquear periodo "year"
+            unico: true,                // ← solo 1 registro por vigencia, mes y usuario
             campos: [
                 { nombre: 'kWh', label: 'Consumo (kWh)', tipo: 'number', step: '0.01' }
             ],
@@ -139,14 +141,15 @@
             tabla: 'personal',
             idColumn: 'id_personal',
             titulo: 'Personal',
-            soloAA: true,
-            periodoAnual: true,
+            soloAA: true,           // ← solo servicio "aa" (Ambos)
+            periodoAnual: true,     // ← solo periodo "year"
+            unico: true,            // ← solo 1 registro por vigencia y usuario
             campos: [
-                { nombre: 'total_directivos', label: 'Total Directivos', tipo: 'number' },
-                { nombre: 'cantidad_relevos', label: 'Cantidad Relevos', tipo: 'number' },
-                { nombre: 'total_administrativo', label: 'Total Administrativo', tipo: 'number' },
-                { nombre: 'total_operativo_acu', label: 'Total Operativo Acueducto', tipo: 'number' },
-                { nombre: 'total_operativo_alc', label: 'Total Operativo Alcantarillado', tipo: 'number' }
+                { nombre: 'total_directivos', label: 'Total Directivos', tipo: 'number', min: '0' },
+                { nombre: 'cantidad_relevos', label: 'Cantidad Relevos', tipo: 'number', min: '0' },
+                { nombre: 'total_administrativo', label: 'Total Administrativo', tipo: 'number', min: '0' },
+                { nombre: 'total_operativo_acu', label: 'Total Operativo Acueducto', tipo: 'number', min: '0' },
+                { nombre: 'total_operativo_alc', label: 'Total Operativo Alcantarillado', tipo: 'number', min: '0' }
             ],
             columnas: ['ID', 'Vigencia', 'Periodo', 'Servicio', 'Directivos', 'Relevos', 'Administrativo', 'Op. Acueducto', 'Op. Alcantarillado', 'Acciones']
         }
@@ -485,13 +488,53 @@
 
         console.log('[initIngresoDatos] Elementos encontrados');
 
+        // Listener para cambio de variable
+        selectVariable.addEventListener('change', () => {
+            const variable = selectVariable.value;
+            const config = VARIABLES_CONFIG[variable];
+
+            if (!config) return;
+
+            // Limpiar y resetear selects
+            selectServicio.value = '';
+            selectPeriodo.value = '';
+            selectServicio.disabled = false;
+            selectPeriodo.disabled = false;
+
+            // NUEVO: Forzar valores para soloAA
+            if (config.soloAA) {
+                selectServicio.value = 'aa';
+                selectServicio.disabled = true; // Deshabilitar para que no se cambie
+            }
+
+            // Forzar valores para periodoAnual
+            if (config.periodoAnual) {
+                selectPeriodo.value = 'year';
+                selectPeriodo.disabled = true;
+            }
+
+            // Forzar valores para soloAcueducto
+            if (config.soloAcueducto) {
+                selectServicio.value = 'acueducto';
+                selectServicio.disabled = true;
+            }
+
+            // Forzar valores para soloAlcantarillado
+            if (config.soloAlcantarillado) {
+                selectServicio.value = 'alcantarillado';
+                selectServicio.disabled = true;
+            }
+
+            console.log('[selectVariable] Configuración aplicada:', config);
+        });
+
         // Event listener del botón consultar
         btnConsultar.addEventListener('click', async () => {
             console.log('[btnConsultar] Click detectado');
 
             const variable = selectVariable.value;
             const vigencia = selectVigencia.value;
-            const servicio = selectServicio.value;
+            let servicio = selectServicio.value;
             const periodo = selectPeriodo.value;
 
             console.log('[btnConsultar] Valores:', { variable, vigencia, servicio, periodo });
@@ -505,6 +548,11 @@
             if (!config) {
                 alert('Variable no configurada');
                 return;
+            }
+
+            // CORRECCIÓN: Forzar servicio si soloAA es true
+            if (config.soloAA) {
+                servicio = 'aa';
             }
 
             // Validaciones de servicio
@@ -523,17 +571,32 @@
                 return;
             }
 
+            // Validar servicio si no es soloAA
+            if (!config.soloAA && !servicio) {
+                alert('Por favor seleccione un Servicio');
+                return;
+            }
+
             // periodo anual
-            if (config.periodoAnual && periodo !== 'year') { alert('Esta variable solo admite periodo Anual'); return; }
-            if (config.noYear && periodo === 'year') { alert('Esta variable no admite periodo Anual'); return; }
-            if (config.noAA && servicio === 'aa') { alert('Esta variable no admite servicio "Ambos"'); return; }
+            if (config.periodoAnual && periodo !== 'year') { 
+                alert('Esta variable solo admite periodo Anual'); 
+                return; 
+            }
+            if (config.noYear && periodo === 'year') { 
+                alert('Esta variable no admite periodo Anual'); 
+                return; 
+            }
+            if (config.noAA && servicio === 'aa') { 
+                alert('Esta variable no admite servicio "Ambos"'); 
+                return; 
+            }
 
             try {
                 // Cargar HTML de la vista según la variable
                 container.innerHTML = '<p style="padding:20px;text-align:center;">Cargando...</p>';
 
                 // Determinar qué vista cargar
-                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html'; // Por defecto
+                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
                 
                 if (variable === 'pqr') {
                     vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
@@ -549,6 +612,10 @@
                     vistaHTML = '/views/cliente/ingreso_datos/redacueducto.html';
                 } else if (variable === 'redalcantarillado') {
                     vistaHTML = '/views/cliente/ingreso_datos/redalcantarillado.html';
+                } else if (variable === 'energia') {
+                    vistaHTML = '/views/cliente/ingreso_datos/energia.html';
+                } else if (variable === 'personal') {
+                    vistaHTML = '/views/cliente/ingreso_datos/personal.html';
                 } else if (variable === 'continuidad') {
                     vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
                 }
@@ -617,12 +684,9 @@
                 // Consultar datos
                 const params = new URLSearchParams({
                     vigencia: vigencia,
-                    mes: periodo
+                    mes: periodo,
+                    servicio: servicio  // ← SIEMPRE enviar servicio
                 });
-
-                if (!config.soloAA) {
-                    params.append('servicio', servicio);
-                }
 
                 const endpoint = variable === 'usuarios' 
                     ? `/api/suscriptores?${params.toString()}`
