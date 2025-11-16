@@ -173,6 +173,12 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         } 
+        .select-servicio{
+            padding: 6px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
         .select-content-periodo{
             display: flex;
             justify-content: center;

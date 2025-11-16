@@ -102,6 +102,7 @@
             soloAcueducto: true,   // solo acueducto
             noAA: true,            // bloquear "aa"
             periodoAnual: true,    // solo periodo "year"
+            unico: true,         // solo 1 registro por vigencia, usuario
             campos: [
                 { nombre: 'longitud_aduccion', label: 'Longitud Aducción (km)', tipo: 'number', step: '0.01' },
                 { nombre: 'fallas_aduccion', label: 'Fallas Aducción', tipo: 'number' },
@@ -114,12 +115,15 @@
             tabla: 'redalcantarillado',
             idColumn: 'id_red_alcantarillado',
             titulo: 'Red de Alcantarillado',
-            soloAlcantarillado: true,
+            soloAlcantarillado: true,   // ← solo alcantarillado
+            noAA: true,                 // ← bloquear "aa"
+            periodoAnual: true,         // ← solo periodo "year"
+            unico: true,                // ← solo 1 registro por vigencia y usuario
             campos: [
                 { nombre: 'longitud_km', label: 'Longitud (km)', tipo: 'number', step: '0.01' },
                 { nombre: 'fallas', label: 'Fallas', tipo: 'number' }
             ],
-            columnas: ['ID', 'Vigencia', 'Mes', 'Servicio', 'Longitud (km)', 'Fallas', 'Acciones']
+            columnas: ['ID', 'Vigencia', 'Periodo', 'Servicio', 'Longitud (km)', 'Fallas', 'Acciones']
         },
         energia: {
             tabla: 'energia',
@@ -529,14 +533,25 @@
                 container.innerHTML = '<p style="padding:20px;text-align:center;">Cargando...</p>';
 
                 // Determinar qué vista cargar
-                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
-                if (variable === 'pqr') vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
-                else if (variable === 'micromedicion') vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
-                else if (variable === 'caudal') vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
-                else if (variable === 'vertimiento') vistaHTML = '/views/cliente/ingreso_datos/vertimiento.html';
-                else if (variable === 'lodos') vistaHTML = '/views/cliente/ingreso_datos/lodos.html';
-                else if (variable === 'redacueducto') vistaHTML = '/views/cliente/ingreso_datos/redacueducto.html';
-                else if (variable === 'continuidad') vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
+                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html'; // Por defecto
+                
+                if (variable === 'pqr') {
+                    vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
+                } else if (variable === 'micromedicion') {
+                    vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
+                } else if (variable === 'caudal') {
+                    vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
+                } else if (variable === 'vertimiento') {
+                    vistaHTML = '/views/cliente/ingreso_datos/vertimiento.html';
+                } else if (variable === 'lodos') {
+                    vistaHTML = '/views/cliente/ingreso_datos/lodos.html';
+                } else if (variable === 'redacueducto') {
+                    vistaHTML = '/views/cliente/ingreso_datos/redacueducto.html';
+                } else if (variable === 'redalcantarillado') {
+                    vistaHTML = '/views/cliente/ingreso_datos/redalcantarillado.html';
+                } else if (variable === 'continuidad') {
+                    vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
+                }
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);
 

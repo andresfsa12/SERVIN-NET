@@ -42,12 +42,23 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         if (tabla === 'pqr' && mes === 'year') {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
+
         if (tabla === 'redacueducto') {
             if (mes !== 'year') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto solo admite periodo Anual (year)' });
             }
             if (servicio !== 'acueducto') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto solo admite servicio acueducto' });
+            }
+        }
+
+        // NUEVA VALIDACIÓN: Red de Alcantarillado
+        if (tabla === 'redalcantarillado') {
+            if (mes !== 'year') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite periodo Anual (year)' });
+            }
+            if (servicio !== 'alcantarillado') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite servicio alcantarillado' });
             }
         }
 
@@ -76,21 +87,24 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
     }
 });
 
-// POST - Crear registro (único vertimiento y redacueducto anual)
+// POST - Crear registro
 router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
     try {
         const { tabla } = req.params;
         const userId = req.session.userId;
         const data = { ...req.body };
 
+        console.log(`[POST /api/ingreso-datos/${tabla}] Body:`, data);
+
         if (!tablasValidas.includes(tabla)) {
             return res.status(400).json({ success: false, message: `Tabla no válida: ${tabla}` });
         }
 
-        // Reglas específicas
+        // Reglas específicas de validación
         if (tabla === 'pqr' && data.mes === 'year') {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
+
         if (tabla === 'redacueducto') {
             if (data.mes !== 'year') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo year' });
@@ -98,17 +112,45 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             if (data.servicio !== 'acueducto') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto requiere servicio acueducto' });
             }
-            // Unicidad opcional anual
+            
+            // RESTRICCIÓN: Solo 1 registro anual por vigencia y usuario
             const [existRA] = await connection.execute(
-                `SELECT id_redAcueducto FROM redacueducto WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'year' AND servicio = 'acueducto'`,
+                `SELECT id_redAcueducto FROM redacueducto 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'year' AND servicio = 'acueducto'`,
                 [userId, data.vigencia]
             );
             if (existRA.length) {
-                return res.status(400).json({ success: false, message: 'Ya existe registro anual de Red de Acueducto. Use Editar.' });
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya existe un registro anual de Red de Acueducto para esta vigencia. Use la opción Editar.' 
+                });
             }
         }
 
-        // Único vertimiento
+        // NUEVA VALIDACIÓN Y RESTRICCIÓN: Red de Alcantarillado
+        if (tabla === 'redalcantarillado') {
+            if (data.mes !== 'year') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere periodo year' });
+            }
+            if (data.servicio !== 'alcantarillado') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere servicio alcantarillado' });
+            }
+            
+            // RESTRICCIÓN: Solo 1 registro anual por vigencia y usuario
+            const [existRAlc] = await connection.execute(
+                `SELECT id_red_alcantarillado FROM redalcantarillado 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'year' AND servicio = 'alcantarillado'`,
+                [userId, data.vigencia]
+            );
+            if (existRAlc.length) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya existe un registro anual de Red de Alcantarillado para esta vigencia. Use la opción Editar.' 
+                });
+            }
+        }
+
+        // RESTRICCIÓN: Único vertimiento
         if (tabla === 'vertimiento') {
             const [existing] = await connection.execute(
                 `SELECT id_vertimiento FROM vertimiento
@@ -116,24 +158,55 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
                 [userId, data.vigencia, data.mes, data.servicio]
             );
             if (existing.length) {
-                return res.status(400).json({ success: false, message: 'Ya existe un registro de vertimiento para esta vigencia y mes. Use Editar.' });
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya existe un registro de vertimiento para esta vigencia y mes. Use la opción Editar.' 
+                });
             }
         }
 
+        // RESTRICCIÓN: Único lodos
+        if (tabla === 'lodos') {
+            const [existLodos] = await connection.execute(
+                `SELECT id_lodos FROM lodos
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+                [userId, data.vigencia, data.mes, data.servicio]
+            );
+            if (existLodos.length) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Ya existe un registro de lodos para esta vigencia y mes. Use la opción Editar.' 
+                });
+            }
+        }
+
+        // Preparar datos para inserción
         delete data.id;
         data.id_usuarioFK = userId;
         data.id_vigenciaFK = data.vigencia;
-        if (tabla === 'personal') { data.periodo = data.mes; delete data.mes; }
+        
+        if (tabla === 'personal') { 
+            data.periodo = data.mes; 
+            delete data.mes; 
+        }
+        
         delete data.vigencia;
 
         const cols = Object.keys(data);
         const vals = Object.values(data);
         const placeholders = cols.map(() => '?').join(', ');
         const query = `INSERT INTO ${tabla} (${cols.join(', ')}) VALUES (${placeholders})`;
+
+        console.log(`[POST /api/ingreso-datos/${tabla}] Query:`, query);
+        console.log(`[POST /api/ingreso-datos/${tabla}] Values:`, vals);
+
         const [r] = await connection.execute(query, vals);
+
+        console.log(`[POST /api/ingreso-datos/${tabla}] ID:`, r.insertId);
 
         return res.json({ success: true, id: r.insertId, message: 'Registro creado correctamente' });
     } catch (err) {
+        console.error(`[POST /api/ingreso-datos] Error:`, err);
         return res.status(500).json({ success: false, message: 'Error al crear: ' + err.message });
     }
 });

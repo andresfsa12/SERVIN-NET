@@ -85,6 +85,14 @@
                 font-size: 1rem;
             }
                 .btn:hover{
-                    background-color: #d8d8d8;
-                    color:var(--tertiary-color);
+                    background-color:var(--primary-color);
+                    color: white;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                }
+
+                .text-form{
+                    color: white;
+                    margin-bottom: 20px;
+                    font-size: 1.2rem;
+                    font-weight: bold;
                 }
