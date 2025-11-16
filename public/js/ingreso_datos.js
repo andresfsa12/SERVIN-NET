@@ -60,6 +60,7 @@
             idColumn: 'id_caudal',
             titulo: 'Caudal',
             soloAcueducto: true,
+            noYear: true,
             campos: [
                 { nombre: 'q_otorgado', label: 'Caudal Otorgado (L/s)', tipo: 'number', step: '0.01' },
                 { nombre: 'q_captado', label: 'Caudal Captado (L/s)', tipo: 'number', step: '0.01' },
