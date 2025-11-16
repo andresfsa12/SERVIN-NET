@@ -14,8 +14,8 @@ const idColumnMap = {
     continuidad: 'id_continuidad',
     pqr: 'id_pqr',
     micromedicion: 'id_mm',
-    caudal: 'id_caudal',  // ← Asegúrate de que esté aquí
-    vertimiento: 'id_vertimiento',
+    caudal: 'id_caudal',
+    vertimiento: 'id_vertimiento',  // ← Asegúrate de que esté aquí
     lodos: 'id_lodos',
     redacueducto: 'id_redAcueducto',
     redalcantarillado: 'id_red_alcantarillado',
@@ -85,13 +85,29 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
 
         console.log(`[POST /api/ingreso-datos/${tabla}] Body:`, data);
 
-        // CORRECCIÓN: Validar tabla
+        // Validar tabla
         if (!tablasValidas.includes(tabla)) {
             console.error(`[POST] Tabla no válida: ${tabla}. Válidas: ${tablasValidas.join(', ')}`);
             return res.status(400).json({ 
                 success: false, 
                 message: `Tabla no válida: ${tabla}. Debe ser una de: ${tablasValidas.join(', ')}` 
             });
+        }
+
+        // NUEVA RESTRICCIÓN: Verificar si ya existe un registro para vertimiento
+        if (tabla === 'vertimiento') {
+            const [existing] = await connection.execute(
+                `SELECT id_vertimiento FROM vertimiento 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+                [userId, data.vigencia, data.mes, data.servicio]
+            );
+
+            if (existing.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Ya existe un registro de vertimiento para esta vigencia y mes. Use la opción Editar.'
+                });
+            }
         }
 
         delete data.id;

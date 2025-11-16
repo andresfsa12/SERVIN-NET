@@ -75,7 +75,8 @@
             tabla: 'vertimiento',
             idColumn: 'id_vertimiento',
             titulo: 'Vertimiento',
-            soloAlcantarillado: true,
+            soloAlcantarillado: true,  // ← Solo alcantarillado
+            noYear: true,
             campos: [
                 { nombre: 'total_m3_vertido', label: 'Total m³ Vertido', tipo: 'number', step: '0.01' }
             ],
@@ -151,6 +152,7 @@
         const thead = document.getElementById('theadDatos');
         const tbody = document.getElementById('tbodyDatos');
         const titulo = document.getElementById('titulo-tabla');
+        const btnNuevo = document.getElementById('btnNuevo');
 
         if (!thead || !tbody) {
             console.error('[renderTabla] Elementos no encontrados');
@@ -164,6 +166,21 @@
         // Actualizar título
         if (titulo) {
             titulo.textContent = config.titulo;
+        }
+
+        // NUEVA LÓGICA: Deshabilitar botón "Nuevo" si es vertimiento y ya existe registro
+        if (btnNuevo) {
+            if (config.tabla === 'vertimiento' && datos && datos.length > 0) {
+                btnNuevo.disabled = true;
+                btnNuevo.style.opacity = '0.5';
+                btnNuevo.style.cursor = 'not-allowed';
+                btnNuevo.title = 'Ya existe un registro. Use Editar.';
+            } else {
+                btnNuevo.disabled = false;
+                btnNuevo.style.opacity = '1';
+                btnNuevo.style.cursor = 'pointer';
+                btnNuevo.title = 'Crear nuevo registro';
+            }
         }
 
         // Generar encabezados
@@ -248,6 +265,12 @@
 
         if (!configActual.soloAA && !servicio) {
             alert('Por favor seleccione un Servicio');
+            return;
+        }
+
+        // NUEVA VALIDACIÓN: Bloquear nuevo registro si ya existe para vertimiento
+        if (configActual.tabla === 'vertimiento' && datosActuales.length > 0) {
+            alert('Ya existe un registro de vertimiento para esta vigencia y mes. Use la opción Editar.');
             return;
         }
 
@@ -525,6 +548,8 @@
                     vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
                 } else if (variable === 'caudal') {
                     vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
+                } else if (variable === 'vertimiento') {
+                    vistaHTML = '/views/cliente/ingreso_datos/vertimiento.html';
                 } else if (variable === 'continuidad') {
                     vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
                 }
