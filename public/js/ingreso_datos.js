@@ -47,6 +47,7 @@
             idColumn: 'id_mm',
             titulo: 'Micromedición',
             soloAcueducto: true,
+            noYear: true,
             campos: [
                 { nombre: 'mm_total', label: 'Total Micromedidores', tipo: 'number' },
                 { nombre: 'mm_funcionales', label: 'Funcionales', tipo: 'number' },
@@ -468,29 +469,66 @@
             }
 
             const config = VARIABLES_CONFIG[variable];
-            if (!config) { alert('Variable no configurada'); return; }
+            if (!config) {
+                alert('Variable no configurada');
+                return;
+            }
 
-            // Validaciones existentes
-            if (config.soloAcueducto && servicio !== 'acueducto') { alert('Esta variable solo aplica para Acueducto'); return; }
-            if (config.soloAlcantarillado && servicio !== 'alcantarillado') { alert('Esta variable solo aplica para Alcantarillado'); return; }
-            if (config.soloAA && servicio !== 'aa') { alert('Esta variable solo aplica para Ambos servicios'); return; }
-            if (config.periodoAnual && periodo !== 'year') { alert('Esta variable solo aplica para periodo Anual'); return; }
+            // Validaciones de servicio
+            if (config.soloAcueducto && servicio !== 'acueducto') {
+                alert('Esta variable solo aplica para Acueducto');
+                return;
+            }
+
+            if (config.soloAlcantarillado && servicio !== 'alcantarillado') {
+                alert('Esta variable solo aplica para Alcantarillado');
+                return;
+            }
+
+            if (config.soloAA && servicio !== 'aa') {
+                alert('Esta variable solo aplica para Ambos servicios');
+                return;
+            }
+
+            if (config.periodoAnual && periodo !== 'year') {
+                alert('Esta variable solo aplica para periodo Anual');
+                return;
+            }
 
             // Nuevas restricciones
-            if (config.noAA && servicio === 'aa') { alert('Esta variable no admite servicio "Ambos"'); return; }
-            if (config.noYear && periodo === 'year') { alert('Esta variable no admite periodo "Anual"'); return; }
+            if (config.noAA && servicio === 'aa') {
+                alert('Esta variable no admite servicio "aa"');
+                return;
+            }
+
+            if (config.noYear && periodo === 'year') {
+                alert('Esta variable no admite periodo "Anual"');
+                return;
+            }
+
+            if (!config.soloAA && !servicio) {
+                alert('Por favor seleccione un Servicio');
+                return;
+            }
 
             try {
-                // Cargar HTML de la vista
+                // Cargar HTML de la vista según la variable
                 container.innerHTML = '<p style="padding:20px;text-align:center;">Cargando...</p>';
 
-                const vista = variable === 'pqr'
-                  ? '/views/cliente/ingreso_datos/pqr.html'
-                  : (variable === 'continuidad'
-                      ? '/views/cliente/ingreso_datos/continuidad.html'
-                      : '/views/cliente/ingreso_datos/continuidad.html');
+                // Determinar qué vista cargar
+                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html'; // Por defecto
+                
+                if (variable === 'pqr') {
+                    vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
+                } else if (variable === 'micromedicion') {
+                    vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
+                } else if (variable === 'continuidad') {
+                    vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
+                }
 
-                const resHtml = await fetch(vista, {
+                console.log('[btnConsultar] Cargando vista:', vistaHTML);
+
+                const resHtml = await fetch(vistaHTML, {
                     credentials: 'same-origin',
                     cache: 'no-store'
                 });
