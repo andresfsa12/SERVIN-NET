@@ -86,6 +86,9 @@
             tabla: 'lodos',
             idColumn: 'id_lodos',
             titulo: 'Lodos',
+            noAA: true,      // ← bloquear servicio "aa"
+            noYear: true,    // ← bloquear periodo "year"
+            unico: true,     // ← solo 1 registro por vigencia, mes, usuario
             campos: [
                 { nombre: 'lodos_ingresados_kg', label: 'Lodos Ingresados (kg)', tipo: 'number', step: '0.01' },
                 { nombre: 'lodos_salientes_kg', label: 'Lodos Salientes (kg)', tipo: 'number', step: '0.01' }
@@ -96,14 +99,16 @@
             tabla: 'redacueducto',
             idColumn: 'id_redAcueducto',
             titulo: 'Red de Acueducto',
-            soloAcueducto: true,
+            soloAcueducto: true,   // solo acueducto
+            noAA: true,            // bloquear "aa"
+            periodoAnual: true,    // solo periodo "year"
             campos: [
                 { nombre: 'longitud_aduccion', label: 'Longitud Aducción (km)', tipo: 'number', step: '0.01' },
                 { nombre: 'fallas_aduccion', label: 'Fallas Aducción', tipo: 'number' },
                 { nombre: 'longitud_condu_distri', label: 'Longitud Conducción/Distribución (km)', tipo: 'number', step: '0.01' },
                 { nombre: 'fallas_condu_distri', label: 'Fallas Conducción/Distribución', tipo: 'number' }
             ],
-            columnas: ['ID', 'Vigencia', 'Mes', 'Servicio', 'Long. Aducción', 'Fallas Aducción', 'Long. Cond/Dist', 'Fallas Cond/Dist', 'Acciones']
+            columnas: ['ID', 'Vigencia', 'Periodo', 'Servicio', 'Long. Aducción', 'Fallas Aducción', 'Long. Cond/Dist', 'Fallas Cond/Dist', 'Acciones']
         },
         redalcantarillado: {
             tabla: 'redalcantarillado',
@@ -168,9 +173,9 @@
             titulo.textContent = config.titulo;
         }
 
-        // NUEVA LÓGICA: Deshabilitar botón "Nuevo" si es vertimiento y ya existe registro
+        // Deshabilitar botón "Nuevo" si la variable tiene restricción única y ya existe registro
         if (btnNuevo) {
-            if (config.tabla === 'vertimiento' && datos && datos.length > 0) {
+            if (config.unico && datos && datos.length > 0) {
                 btnNuevo.disabled = true;
                 btnNuevo.style.opacity = '0.5';
                 btnNuevo.style.cursor = 'not-allowed';
@@ -268,9 +273,9 @@
             return;
         }
 
-        // NUEVA VALIDACIÓN: Bloquear nuevo registro si ya existe para vertimiento
-        if (configActual.tabla === 'vertimiento' && datosActuales.length > 0) {
-            alert('Ya existe un registro de vertimiento para esta vigencia y mes. Use la opción Editar.');
+        // Validación para variables con restricción única (vertimiento y lodos)
+        if (configActual.unico && datosActuales.length > 0) {
+            alert(`Ya existe un registro de ${configActual.titulo} para esta vigencia y mes. Use la opción Editar.`);
             return;
         }
 
@@ -514,45 +519,24 @@
                 return;
             }
 
-            if (config.periodoAnual && periodo !== 'year') {
-                alert('Esta variable solo aplica para periodo Anual');
-                return;
-            }
-
-            // Nuevas restricciones
-            if (config.noAA && servicio === 'aa') {
-                alert('Esta variable no admite servicio "aa"');
-                return;
-            }
-
-            if (config.noYear && periodo === 'year') {
-                alert('Esta variable no admite periodo "Anual"');
-                return;
-            }
-
-            if (!config.soloAA && !servicio) {
-                alert('Por favor seleccione un Servicio');
-                return;
-            }
+            // periodo anual
+            if (config.periodoAnual && periodo !== 'year') { alert('Esta variable solo admite periodo Anual'); return; }
+            if (config.noYear && periodo === 'year') { alert('Esta variable no admite periodo Anual'); return; }
+            if (config.noAA && servicio === 'aa') { alert('Esta variable no admite servicio "Ambos"'); return; }
 
             try {
                 // Cargar HTML de la vista según la variable
                 container.innerHTML = '<p style="padding:20px;text-align:center;">Cargando...</p>';
 
                 // Determinar qué vista cargar
-                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html'; // Por defecto
-                
-                if (variable === 'pqr') {
-                    vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
-                } else if (variable === 'micromedicion') {
-                    vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
-                } else if (variable === 'caudal') {
-                    vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
-                } else if (variable === 'vertimiento') {
-                    vistaHTML = '/views/cliente/ingreso_datos/vertimiento.html';
-                } else if (variable === 'continuidad') {
-                    vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
-                }
+                let vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
+                if (variable === 'pqr') vistaHTML = '/views/cliente/ingreso_datos/pqr.html';
+                else if (variable === 'micromedicion') vistaHTML = '/views/cliente/ingreso_datos/micromedicion.html';
+                else if (variable === 'caudal') vistaHTML = '/views/cliente/ingreso_datos/caudal.html';
+                else if (variable === 'vertimiento') vistaHTML = '/views/cliente/ingreso_datos/vertimiento.html';
+                else if (variable === 'lodos') vistaHTML = '/views/cliente/ingreso_datos/lodos.html';
+                else if (variable === 'redacueducto') vistaHTML = '/views/cliente/ingreso_datos/redacueducto.html';
+                else if (variable === 'continuidad') vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);
 
