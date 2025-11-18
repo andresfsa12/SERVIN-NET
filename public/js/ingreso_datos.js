@@ -14,6 +14,9 @@
             tabla: 'suscriptores',  // ← Debe coincidir con el nombre de la tabla en BD
             idColumn: 'id_suscriptores',
             titulo: 'Suscriptores',
+            noAA: true,        // ← bloquear servicio "aa"
+            noYear: true,      // ← bloquear periodo "year"
+            unico: true,       // ← bloquear duplicados
             campos: [
                 { nombre: 'suscriptores', label: 'Número de Suscriptores', tipo: 'number' }
             ],
@@ -24,6 +27,8 @@
             idColumn: 'id_continuidad',
             titulo: 'Continuidad',
             soloAcueducto: true,
+            noYear: true,      // ← bloquear periodo "year"
+            unico: true,       // ← bloquear duplicados
             campos: [
                 { nombre: 'h_suspension', label: 'Horas de Suspensión', tipo: 'number', step: '0.01' }
             ],
@@ -35,6 +40,7 @@
             titulo: 'PQR',
             noAA: true,          // ← bloquear servicio "aa"
             noYear: true,        // ← bloquear periodo "year"
+            unico: true,         // ← solo 1 registro por vigencia, mes, servicio, usuario
             campos: [
                 { nombre: 'pqr_recibidas', label: 'PQR Recibidas', tipo: 'number' },
                 { nombre: 'pqr_resueltas', label: 'PQR Resueltas', tipo: 'number' },
@@ -48,6 +54,7 @@
             titulo: 'Micromedición',
             soloAcueducto: true,
             noYear: true,
+            unico: true,
             campos: [
                 { nombre: 'mm_total', label: 'Total Micromedidores', tipo: 'number' },
                 { nombre: 'mm_funcionales', label: 'Funcionales', tipo: 'number' },
@@ -61,6 +68,7 @@
             titulo: 'Caudal',
             soloAcueducto: true,
             noYear: true,
+            unico: true,
             campos: [
                 { nombre: 'q_otorgado', label: 'Caudal Otorgado (L/s)', tipo: 'number', step: '0.01' },
                 { nombre: 'q_captado', label: 'Caudal Captado (L/s)', tipo: 'number', step: '0.01' },
@@ -77,6 +85,7 @@
             titulo: 'Vertimiento',
             soloAlcantarillado: true,  // ← Solo alcantarillado
             noYear: true,
+            unico: true,               // ← solo 1 registro por vigencia, mes, usuario
             campos: [
                 { nombre: 'total_m3_vertido', label: 'Total m³ Vertido', tipo: 'number', step: '0.01' }
             ],
@@ -509,8 +518,30 @@
 
             // Forzar valores para periodoAnual
             if (config.periodoAnual) {
-                selectPeriodo.value = 'year';
+                selectPeriodo.value = 'anual';
                 selectPeriodo.disabled = true;
+                console.log('[selectVariable] Periodo forzado a "anual"');
+            }
+
+            // noYear: deshabilitar opción "anual" (mantener habilitado el select)
+            if (config.noYear) {
+                const optionYear = selectPeriodo.querySelector('option[value="anual"]');
+                if (optionYear) {
+                    optionYear.disabled = true;
+                    optionYear.style.display = 'none';
+                }
+                // Si estaba seleccionado "anual", limpiar
+                if (selectPeriodo.value === 'anual') {
+                    selectPeriodo.value = '';
+                }
+                console.log('[selectVariable] Opción "anual" deshabilitada');
+            } else {
+                // Rehabilitar "anual" si no tiene restricción
+                const optionYear = selectPeriodo.querySelector('option[value="anual"]');
+                if (optionYear) {
+                    optionYear.disabled = false;
+                    optionYear.style.display = '';
+                }
             }
 
             // Forzar valores para soloAcueducto
@@ -578,11 +609,11 @@
             }
 
             // periodo anual
-            if (config.periodoAnual && periodo !== 'year') { 
+            if (config.periodoAnual && periodo !== 'anual') { 
                 alert('Esta variable solo admite periodo Anual'); 
                 return; 
             }
-            if (config.noYear && periodo === 'year') { 
+            if (config.noYear && periodo === 'anual') { 
                 alert('Esta variable no admite periodo Anual'); 
                 return; 
             }
