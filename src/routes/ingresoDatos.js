@@ -20,12 +20,30 @@ const idColumnMap = {
     redacueducto: 'id_redAcueducto',
     redalcantarillado: 'id_red_alcantarillado',
     energia: 'id_energia',
-    personal: 'id_personal'
+    personal: 'id_personal',
+    financiero: 'id_financiero',
+    eventos_climaticos: 'id_eventos_c',
+    poir: 'id_poir'
 };
 
-// Lista de tablas válidas
-const tablasValidas = Object.keys(idColumnMap);
+const tablasValidas = [
+    'suscriptores',
+    'continuidad',
+    'pqr',
+    'micromedicion',
+    'caudal',
+    'vertimiento',
+    'lodos',
+    'redacueducto',
+    'redalcantarillado',
+    'energia',
+    'personal',
+    'financiero',
+    'eventos_climaticos',
+    'poir'
+];
 
+// 1. Rutas genéricas (aplican a todas las tablas)
 // GET - Consultar datos
 router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
     try {
@@ -38,26 +56,44 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         }
 
         // Reglas específicas
-        if (tabla === 'pqr' && mes === 'anual') {
+        if (tabla === 'pqr' && mes === 'Anual') {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
 
-        if (tabla === 'energia' && mes === 'anual') {
+        if (tabla === 'energia' && mes === 'Anual') {
             return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
         }
 
         if (tabla === 'personal') {
-            if (mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Personal solo admite periodo Anual (anual)' });
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Personal solo admite periodo Anual' });
             }
             if (servicio !== 'aa') {
                 return res.status(400).json({ success: false, message: 'Personal solo admite servicio "Ambos" (aa)' });
             }
         }
 
+        if (tabla === 'financiero') {
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Financiero solo admite periodo Anual' });
+            }
+            if (servicio !== 'aa') {
+                return res.status(400).json({ success: false, message: 'Financiero solo admite servicio "Ambos" (aa)' });
+            }
+        }
+
+        if (tabla === 'eventos_climaticos') {
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Eventos Climáticos solo admite periodo Anual' });
+            }
+            if (servicio !== 'aa') {
+                return res.status(400).json({ success: false, message: 'Eventos Climáticos solo admite servicio "Ambos" (aa)' });
+            }
+        }
+
         if (tabla === 'redacueducto') {
-            if (mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Red de Acueducto solo admite periodo Anual (anual)' });
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Red de Acueducto solo admite periodo Anual' });
             }
             if (servicio !== 'acueducto') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto solo admite servicio acueducto' });
@@ -65,8 +101,8 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         }
 
         if (tabla === 'redalcantarillado') {
-            if (mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite periodo Anual (anual)' });
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite periodo Anual' });
             }
             if (servicio !== 'alcantarillado') {
                 return res.status(400).json({ success: false, message: 'Red de Alcantarillado solo admite servicio alcantarillado' });
@@ -77,11 +113,21 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Energía no admite servicio "Ambos". Seleccione acueducto o alcantarillado.' });
         }
 
+        // POIR (anual + aa)
+        if (tabla === 'poir') {
+            if (mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'POIR solo admite periodo Anual' });
+            }
+            if (servicio !== 'aa') {
+                return res.status(400).json({ success: false, message: 'POIR solo admite servicio "Ambos" (aa)' });
+            }
+        }
+
         let query = `SELECT * FROM ${tabla} WHERE id_usuarioFK = ? AND id_vigenciaFK = ?`;
         const params = [userId, vigencia];
 
-        // Personal usa "periodo", las demás usan "mes"
-        if (tabla === 'personal') {
+        // Tablas con "periodo"
+        if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir') {
             query += ' AND periodo = ?';
             params.push(mes);
         } else {
@@ -116,34 +162,67 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: `Tabla no válida: ${tabla}` });
         }
 
-        // Reglas específicas de validación
-        if (tabla === 'pqr' && data.mes === 'anual') {
+        // VALIDAR QUE LA VIGENCIA EXISTA
+        const [vigenciaExists] = await connection.execute(
+            'SELECT id_vigencia FROM vigencia WHERE id_vigencia = ?',
+            [data.vigencia]
+        );
+
+        if (!vigenciaExists.length) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `La vigencia ${data.vigencia} no existe en la base de datos. Contacte al administrador.` 
+            });
+        }
+
+        // Validaciones
+        if (tabla === 'pqr' && data.mes === 'Anual') {
             return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
 
+        // Personal (único anual)
         if (tabla === 'personal') {
-            if (data.mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Personal requiere periodo anual' });
-            }
-            if (data.servicio !== 'aa') {
-                return res.status(400).json({ success: false, message: 'Personal requiere servicio "Ambos" (aa)' });
-            }
-            
+            if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Personal requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Personal requiere servicio "Ambos" (aa)' });
             const [existPersonal] = await connection.execute(
-                `SELECT id_personal FROM personal 
-                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'anual'`,
+                `SELECT id_personal FROM personal WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual'`,
                 [userId, data.vigencia]
             );
             if (existPersonal.length) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Ya existe un registro anual de Personal para esta vigencia. Use la opción Editar.' 
-                });
+                return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Personal para esta vigencia. Use la opción Editar.' });
             }
         }
 
+        // Financiero (único anual)
+        if (tabla === 'financiero') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Financiero requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Financiero requiere servicio "Ambos" (aa)' });
+            const [existFin] = await connection.execute(
+                `SELECT id_financiero FROM financiero WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (existFin.length) {
+                return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Financiero para esta vigencia. Use la opción Editar.' });
+            }
+        }
+
+        // Eventos Climáticos (único anual)
+        if (tabla === 'eventos_climaticos') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere servicio "aa"' });
+            const [existEv] = await connection.execute(
+                `SELECT id_eventos_c FROM eventos_climaticos
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (existEv.length) {
+                return res.status(400).json({ success:false, message:'Ya existe registro anual de Eventos Climáticos. Use Editar.' });
+            }
+        }
+
+        // Energía
         if (tabla === 'energia') {
-            if (data.mes === 'anual') {
+            if (data.mes === 'Anual') {
                 return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
             }
             if (data.servicio !== 'acueducto' && data.servicio !== 'alcantarillado') {
@@ -163,9 +242,10 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        // Red Acueducto
         if (tabla === 'redacueducto') {
-            if (data.mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo anual' });
+            if (data.mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo Anual' });
             }
             if (data.servicio !== 'acueducto') {
                 return res.status(400).json({ success: false, message: 'Red de Acueducto requiere servicio acueducto' });
@@ -173,7 +253,7 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             
             const [existRA] = await connection.execute(
                 `SELECT id_redAcueducto FROM redacueducto 
-                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'anual' AND servicio = 'acueducto'`,
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'Anual' AND servicio = 'acueducto'`,
                 [userId, data.vigencia]
             );
             if (existRA.length) {
@@ -184,9 +264,10 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        // Red Alcantarillado
         if (tabla === 'redalcantarillado') {
-            if (data.mes !== 'anual') {
-                return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere periodo anual' });
+            if (data.mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere periodo Anual' });
             }
             if (data.servicio !== 'alcantarillado') {
                 return res.status(400).json({ success: false, message: 'Red de Alcantarillado requiere servicio alcantarillado' });
@@ -194,7 +275,7 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             
             const [existRAlc] = await connection.execute(
                 `SELECT id_red_alcantarillado FROM redalcantarillado 
-                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'anual' AND servicio = 'alcantarillado'`,
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'Anual' AND servicio = 'alcantarillado'`,
                 [userId, data.vigencia]
             );
             if (existRAlc.length) {
@@ -205,6 +286,7 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        // Vertimiento
         if (tabla === 'vertimiento') {
             const [existing] = await connection.execute(
                 `SELECT id_vertimiento FROM vertimiento
@@ -219,6 +301,7 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        // Lodos
         if (tabla === 'lodos') {
             const [existLodos] = await connection.execute(
                 `SELECT id_lodos FROM lodos
@@ -233,17 +316,28 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
-        // Preparar datos para inserción
+        // Normalizar datos
         delete data.id;
         data.id_usuarioFK = userId;
         data.id_vigenciaFK = data.vigencia;
-        
-        if (tabla === 'personal') { 
-            data.periodo = data.mes; 
-            delete data.mes; 
+
+        // Tablas con "periodo"
+        if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir') {
+            data.periodo = data.mes;
+            delete data.mes;
         }
-        
+
         delete data.vigencia;
+
+        // CALCULAR PORCENTAJES PARA POIR
+        if (tabla === 'poir') {
+            data.porcentaje_ejec_acu = data.inv_proy_acu > 0 
+                ? (data.inv_ejec_acu / data.inv_proy_acu) * 100 
+                : 0;
+            data.porcentaje_ejec_alc = data.inv_proy_alc > 0 
+                ? (data.inv_ejec_alc / data.inv_proy_alc) * 100 
+                : 0;
+        }
 
         const cols = Object.keys(data);
         const vals = Object.values(data);
@@ -325,6 +419,79 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
     }
 });
 
+// DELETE - Eliminar registro
+router.delete('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
+    try {
+        const { tabla, id } = req.params;
+        const userId = req.session.userId;
+
+        console.log(`[DELETE /api/ingreso-datos/${tabla}/${id}] Iniciando eliminación`);
+
+        // Validar tabla
+        if (!tablasValidas.includes(tabla)) {
+            console.error(`[DELETE] Tabla no válida: ${tabla}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: `Tabla no válida: ${tabla}` 
+            });
+        }
+
+        // Obtener columna ID correcta
+        const idCol = idColumnMap[tabla];
+        
+        if (!idCol) {
+            console.error(`[DELETE] No se encontró columna ID para tabla: ${tabla}`);
+            return res.status(400).json({ 
+                success: false, 
+                message: `Configuración incorrecta para tabla: ${tabla}` 
+            });
+        }
+
+        // Verificar que el registro existe y pertenece al usuario
+        const queryCheck = `SELECT ${idCol} FROM ${tabla} WHERE ${idCol} = ? AND id_usuarioFK = ?`;
+        console.log(`[DELETE] Query verificación:`, queryCheck);
+        
+        const [exists] = await connection.execute(queryCheck, [id, userId]);
+        
+        if (exists.length === 0) {
+            console.log(`[DELETE] Registro no encontrado o no autorizado`);
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Registro no encontrado o no tiene permisos para eliminarlo' 
+            });
+        }
+
+        // Eliminar registro
+        const queryDelete = `DELETE FROM ${tabla} WHERE ${idCol} = ? AND id_usuarioFK = ?`;
+        console.log(`[DELETE] Query eliminación:`, queryDelete);
+        console.log(`[DELETE] Parámetros:`, [id, userId]);
+
+        const [result] = await connection.execute(queryDelete, [id, userId]);
+
+        console.log(`[DELETE] Filas afectadas:`, result.affectedRows);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'No se pudo eliminar el registro' 
+            });
+        }
+
+        return res.json({ 
+            success: true, 
+            message: 'Registro eliminado correctamente' 
+        });
+
+    } catch (error) {
+        console.error(`[DELETE /api/ingreso-datos] Error:`, error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Error al eliminar: ' + error.message 
+        });
+    }
+});
+
+// 2. Rutas específicas de PQR (al final)
 // GET ya soporta pqr si es genérico. Asegurar validación periodo
 router.get('/api/ingreso-datos/pqr', requireAuth, async (req, res) => {
   try {
