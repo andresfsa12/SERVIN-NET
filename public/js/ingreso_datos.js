@@ -463,7 +463,7 @@
                 const porcAcu = d.inv_proy_acu > 0 ? ((d.inv_ejec_acu / d.inv_proy_acu) * 100).toFixed(2) + '%' : '0%';
                 const porcAlc = d.inv_proy_alc > 0 ? ((d.inv_ejec_alc / d.inv_proy_alc) * 100).toFixed(2) + '%' : '0%';
                 celdas.push(td(porcAcu, 'num'));
-                celds.push(td(porcAlc, 'num'));
+                celdas.push(td(porcAlc, 'num')); // ← corregido (antes: celds.push)
             }
 
             // Acciones
