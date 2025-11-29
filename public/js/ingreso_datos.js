@@ -232,6 +232,36 @@
                 'ID','Vigencia','Periodo','Servicio',
                 'Reportado SUI','Inv. Proy. Acu','Inv. Ejec. Acu','Inv. Proy. Alc','Inv. Ejec. Alc','% Ejec. Acu','% Ejec. Alc','Acciones'
             ]
+        },
+        tarifa_acu: {
+            tabla: 'tarifa_acu',
+            idColumn: 'id_tarifas_acu',
+            titulo: 'Tarifa Acueducto',
+            soloAcueducto: true,      // Solo servicio acueducto
+            periodoAnual: true,       // Solo periodo Anual
+            unico: true,              // Un solo registro por vigencia/periodo/usuario
+            campos: [
+                { nombre: 'tarifa_cf_aprob', label: 'Tarifa Cargo Fijo Aprobada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cf_fact', label: 'Tarifa Cargo Fijo Facturada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cc_aprob', label: 'Tarifa Cargo Consumo Aprobada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cc_fact', label: 'Tarifa Cargo Consumo Facturada', tipo: 'number', step: '0.01' }
+            ],
+            columnas: ['ID','Vigencia','Periodo','Servicio','CF Aprob','CF Fact','CC Aprob','CC Fact','Acciones']
+        },
+        tarifa_alc: {
+            tabla: 'tarifa_alc',
+            idColumn: 'id_tarifas_alc',
+            titulo: 'Tarifa Alcantarillado',
+            soloAlcantarillado: true,      
+            periodoAnual: true,       // soloYear: true
+            unico: true,
+            campos: [
+                { nombre: 'tarifa_cf_aprob', label: 'Tarifa Cargo Fijo Aprobada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cf_fact', label: 'Tarifa Cargo Fijo Facturada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cc_aprob', label: 'Tarifa Cargo Consumo Aprobada', tipo: 'number', step: '0.01' },
+                { nombre: 'tarifa_cc_fact', label: 'Tarifa Cargo Consumo Facturada', tipo: 'number', step: '0.01' }
+            ],
+            columnas: ['ID','Vigencia','Periodo','Servicio','CF Aprob','CF Fact','CC Aprob','CC Fact','Acciones']
         }
     };
 
@@ -442,7 +472,10 @@
                 celdas.push(td(d.periodo));
             } else {
                 celdas.push(td(d.id_vigenciaFK));
-                celdas.push(td(d.mes));
+                // --- Ajuste en renderTabla para evitar "undefined" en Periodo ---
+                // Reemplazar donde agregas la celda de periodo/mes
+                const periodoValor = (d.periodo ?? d.mes ?? '');
+                celdas.push(`<td>${periodoValor}</td>`);
             }
 
             celdas.push(td(d.servicio));
@@ -546,34 +579,26 @@
 
         // Generar campos dinámicos
         const config = window.currentConfig;
-        if (config && config.campos) {
+        if (config && config.campos) {  // ← corregido
             config.campos.forEach(campo => {
                 const div = document.createElement('div');
                 div.className = 'form-group';
-                
                 const label = document.createElement('label');
                 label.textContent = campo.label;
                 label.setAttribute('for', campo.nombre);
                 div.appendChild(label);
-
                 let input;
-                
-                // Manejo de campo tipo select
                 if (campo.tipo === 'select' && campo.opciones) {
                     input = document.createElement('select');
                     input.id = campo.nombre;
                     input.name = campo.nombre;
                     input.required = true;
-                    
-                    // Opción placeholder
                     const optionPlaceholder = document.createElement('option');
                     optionPlaceholder.value = '';
                     optionPlaceholder.textContent = 'Seleccione...';
                     optionPlaceholder.disabled = true;
                     optionPlaceholder.selected = true;
                     input.appendChild(optionPlaceholder);
-                    
-                    // Opciones del select
                     campo.opciones.forEach(opcion => {
                         const option = document.createElement('option');
                         option.value = opcion.value;
@@ -581,19 +606,16 @@
                         input.appendChild(option);
                     });
                 } else {
-                    // Campos normales (number, text, etc.)
                     input = document.createElement('input');
                     input.type = campo.tipo || 'text';
                     input.id = campo.nombre;
                     input.name = campo.nombre;
                     input.required = true;
-                    
                     if (campo.min !== undefined) input.min = campo.min;
                     if (campo.max !== undefined) input.max = campo.max;
                     if (campo.step !== undefined) input.step = campo.step;
                     if (campo.placeholder) input.placeholder = campo.placeholder;
                 }
-                
                 div.appendChild(input);
                 camposDinamicos.appendChild(div);
             });
@@ -1107,6 +1129,10 @@
                     vistaHTML = '/views/cliente/ingreso_datos/poir.html';
                 } else if (variable === 'continuidad') {
                     vistaHTML = '/views/cliente/ingreso_datos/continuidad.html';
+                } else if (variable === 'tarifa_acu') {
+                    vistaHTML = '/views/cliente/ingreso_datos/tarifa_acu.html';
+                } else if (variable === 'tarifa_alc') {
+                    vistaHTML = '/views/cliente/ingreso_datos/tarifa_alc.html';
                 }
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);
