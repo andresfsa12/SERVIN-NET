@@ -26,7 +26,8 @@ const idColumnMap = {
     eventos_climaticos: 'id_eventos_c',
     poir: 'id_poir',
     tarifa_acu: 'id_tarifas_acu',
-    tarifa_alc: 'id_tarifas_alc'
+    tarifa_alc: 'id_tarifas_alc',
+    irca: 'id_irca'
 };
 
 const tablasValidas = [
@@ -45,7 +46,8 @@ const tablasValidas = [
     'eventos_climaticos',
     'poir',
     'tarifa_acu',
-    'tarifa_alc'
+    'tarifa_alc',
+    'irca'
 ];
 
 // 1. Rutas genéricas (aplican a todas las tablas)
@@ -160,11 +162,17 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             }
         }
 
+        // IRCA
+        if (tabla === 'irca') {
+            if (mes !== 'Anual') return res.status(400).json({ success:false, message:'IRCA solo admite periodo Anual' });
+            if (servicio !== 'acueducto') return res.status(400).json({ success:false, message:'IRCA solo admite servicio acueducto' });
+        }
+
         let query = `SELECT * FROM ${tabla} WHERE id_usuarioFK = ? AND id_vigenciaFK = ?`;
         const params = [userId, vigencia];
 
         // Campo periodo vs mes
-        if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir' || tabla === 'tarifa_acu' || tabla === 'tarifa_alc') {
+        if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir' || tabla === 'tarifa_acu' || tabla === 'tarifa_alc' || tabla === 'irca') {
             query += ' AND periodo = ?';
             params.push(mes);
         } else {
@@ -320,82 +328,42 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         if (existAlc.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Alcantarillado. Use Editar.' });
     }
 
-    let insert = { id_usuarioFK: userId, id_vigenciaFK: data.vigencia };
-
-    if (tabla === 'tarifa_acu') {
-        insert.servicio = data.servicio;
-        insert.periodo  = data.mes; // <-- antes se usaba data.periodo (undefined)
-        insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
-        insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
-        insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
-        insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
-    } else if (tabla === 'tarifa_alc') {
-        insert.servicio = data.servicio;
-        insert.periodo  = data.mes; // <-- corregido
-        insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
-        insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
-        insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
-        insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
+    // IRCA
+    if (tabla === 'irca') {
+        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'IRCA requiere periodo Anual' });
+        if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'IRCA requiere servicio acueducto' });
+        const [existIrca] = await connection.execute(
+            `SELECT id_irca FROM irca WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
+            [userId, data.vigencia]
+        );
+        if (existIrca.length) return res.status(400).json({ success:false, message:'Ya existe registro anual IRCA. Use Editar.' });
     }
 
-    // Tarifa Alcantarillado (unicidad y construcción insert)
-    if (tabla === 'tarifa_alc') {
-      if (data.periodo !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere periodo Anual' });
-      if (data.servicio !== 'alcantarillado') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere servicio alcantarillado' });
-      const [exist] = await connection.execute(
-        `SELECT id_tarifas_alc FROM tarifa_alc
-         WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'alcantarillado'`,
-        [userId, data.vigencia]
-      );
-      if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Alcantarillado para esta vigencia. Use Editar.' });
+    // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
+    const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca'];
 
-      insert.servicio = data.servicio;
-      insert.periodo  = data.periodo;
+    let insert = {
+      id_usuarioFK: userId,
+      id_vigenciaFK: data.vigencia,
+      servicio: data.servicio
+    };
+
+    if (TABLAS_USAN_PERIODO.includes(tabla)) {
+      insert.periodo = data.mes;  // mapear mes -> periodo
+    } else {
+      insert.mes = data.mes;      // tablas que sí guardan "mes"
+    }
+
+    // Campos específicos
+    if (tabla === 'tarifa_acu' || tabla === 'tarifa_alc') {
       insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
       insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
       insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
       insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
-    }
-
-    // Tarifa Acueducto
-    else if (tabla === 'tarifa_acu') {
-      if (data.periodo !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere periodo Anual' });
-      if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere servicio acueducto' });
-      const [existTarifa] = await connection.execute(
-        `SELECT id_tarifas_acu FROM tarifa_acu
-         WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
-        [userId, data.vigencia]
-      );
-      if (existTarifa.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Acueducto para esta vigencia. Use Editar.' });
-
-      insert.servicio = data.servicio;
-      insert.periodo  = data.periodo;
-      insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
-      insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
-      insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
-      insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
-    }
-
-    // Tablas con campo periodo (personal, financiero, eventos_climaticos, poir)
-    else if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir') {
-      insert.servicio = data.servicio;
-      insert.periodo  = data.mes;
-      // agregar campos específicos si aplica...
-    }
-
-    // Energía (usa mes)
-    else if (tabla === 'energia') {
-      insert.servicio = data.servicio;
-      insert.mes = data.mes;
-      Object.keys(data).forEach(k => {
-        if (!['vigencia','mes','servicio'].includes(k)) insert[k] = data[k];
-      });
-    }
-
-    // Resto de tablas con mes
-    else {
-      insert.servicio = data.servicio;
-      insert.mes = data.mes;
+    } else if (tabla === 'irca') {
+      insert.resultado = data.resultado ?? 0;
+    } else {
+      // Copiar el resto evitando duplicar claves base
       Object.keys(data).forEach(k => {
         if (!['vigencia','mes','servicio'].includes(k)) insert[k] = data[k];
       });
@@ -445,6 +413,10 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
             // Evitar cambio de servicio/periodo en update
             delete data.servicio;
             delete data.periodo;
+        } else if (tabla === 'irca') {
+            delete data.servicio;
+            delete data.periodo;
+            delete data.mes;
         }
 
         // Eliminar campos no actualizables

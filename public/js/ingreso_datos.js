@@ -262,6 +262,18 @@
                 { nombre: 'tarifa_cc_fact', label: 'Tarifa Cargo Consumo Facturada', tipo: 'number', step: '0.01' }
             ],
             columnas: ['ID','Vigencia','Periodo','Servicio','CF Aprob','CF Fact','CC Aprob','CC Fact','Acciones']
+        },
+        irca: {
+            tabla: 'irca',
+            idColumn: 'id_irca',
+            titulo: 'IRCA',
+            soloAcueducto: true,
+            periodoAnual: true,
+            unico: true,
+            campos: [
+                { nombre: 'resultado', label: 'Resultado IRCA', tipo: 'number', step: '0.01' }
+            ],
+            columnas: ['ID','Vigencia','Periodo','Servicio','Resultado','Acciones']
         }
     };
 
@@ -1133,6 +1145,8 @@
                     vistaHTML = '/views/cliente/ingreso_datos/tarifa_acu.html';
                 } else if (variable === 'tarifa_alc') {
                     vistaHTML = '/views/cliente/ingreso_datos/tarifa_alc.html';
+                } else if (variable === 'irca') {
+                    vistaHTML = '/views/cliente/ingreso_datos/irca.html';
                 }
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);
