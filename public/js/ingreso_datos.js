@@ -274,6 +274,23 @@
                 { nombre: 'resultado', label: 'Resultado IRCA', tipo: 'number', step: '0.01' }
             ],
             columnas: ['ID','Vigencia','Periodo','Servicio','Resultado','Acciones']
+        },
+        metas_calidad: {
+            tabla: 'metas_calidad',
+            idColumn: 'id_metas',
+            titulo: 'Metas de Calidad',
+            soloAA: true,        // servicio = aa
+            periodoAnual: true,     // periodo = Anual
+            unico: true,
+            campos: [
+                { nombre: 'cobertura_meta', label: 'Cobertura Meta (%)', tipo: 'number', step: '0.01' },
+                { nombre: 'cobertura_real', label: 'Cobertura Real (%)', tipo: 'number', step: '0.01' },
+                { nombre: 'continuidad_meta', label: 'Continuidad Meta (hrs)', tipo: 'number', step: '0.01' },
+                { nombre: 'continuidad_real', label: 'Continuidad Real (hrs)', tipo: 'number', step: '0.01' },
+                { nombre: 'micromedicion_meta', label: 'Micromedición Meta (%)', tipo: 'number', step: '0.01' },
+                { nombre: 'micromedicion_real', label: 'Micromedición Real (%)', tipo: 'number', step: '0.01' }
+            ],
+            columnas: ['ID','Vigencia','Periodo','Servicio','Cob Meta','Cob Real','Cont Meta','Cont Real','Micro Meta','Micro Real','Acciones']
         }
     };
 
@@ -1147,6 +1164,8 @@
                     vistaHTML = '/views/cliente/ingreso_datos/tarifa_alc.html';
                 } else if (variable === 'irca') {
                     vistaHTML = '/views/cliente/ingreso_datos/irca.html';
+                } else if (variable === 'metas_calidad') {
+                    vistaHTML = '/views/cliente/ingreso_datos/metas_calidad.html';
                 }
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);

@@ -27,7 +27,8 @@ const idColumnMap = {
     poir: 'id_poir',
     tarifa_acu: 'id_tarifas_acu',
     tarifa_alc: 'id_tarifas_alc',
-    irca: 'id_irca'
+    irca: 'id_irca',
+    metas_calidad: 'id_metas'
 };
 
 const tablasValidas = [
@@ -47,7 +48,8 @@ const tablasValidas = [
     'poir',
     'tarifa_acu',
     'tarifa_alc',
-    'irca'
+    'irca',
+    'metas_calidad'
 ];
 
 // 1. Rutas genéricas (aplican a todas las tablas)
@@ -168,11 +170,18 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             if (servicio !== 'acueducto') return res.status(400).json({ success:false, message:'IRCA solo admite servicio acueducto' });
         }
 
+        // Metas de Calidad
+        if (tabla === 'metas_calidad') {
+            if (mes !== 'Anual') return res.status(400).json({ success:false, message:'Metas de Calidad solo admite periodo Anual' });
+            if (servicio !== 'aa') return res.status(400).json({ success:false, message:'Metas de Calidad solo admite servicio Ambos (aa)' });
+        }
+
         let query = `SELECT * FROM ${tabla} WHERE id_usuarioFK = ? AND id_vigenciaFK = ?`;
         const params = [userId, vigencia];
 
         // Campo periodo vs mes
-        if (tabla === 'personal' || tabla === 'financiero' || tabla === 'eventos_climaticos' || tabla === 'poir' || tabla === 'tarifa_acu' || tabla === 'tarifa_alc' || tabla === 'irca') {
+        const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad'];
+        if (TABLAS_USAN_PERIODO.includes(tabla)) {
             query += ' AND periodo = ?';
             params.push(mes);
         } else {
@@ -339,8 +348,19 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         if (existIrca.length) return res.status(400).json({ success:false, message:'Ya existe registro anual IRCA. Use Editar.' });
     }
 
+    // Metas de Calidad
+    if (tabla === 'metas_calidad') {
+        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Metas de Calidad requiere periodo Anual' });
+        if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Metas de Calidad requiere servicio Ambos (aa)' });
+        const [exist] = await connection.execute(
+            `SELECT id_metas FROM metas_calidad WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+            [userId, data.vigencia]
+        );
+        if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Metas de Calidad. Use Editar.' });
+    }
+
     // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
-    const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca'];
+    const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad'];
 
     let insert = {
       id_usuarioFK: userId,
@@ -362,6 +382,13 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
       insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
     } else if (tabla === 'irca') {
       insert.resultado = data.resultado ?? 0;
+    } else if (tabla === 'metas_calidad') {
+      insert.cobertura_meta = data.cobertura_meta ?? 0;
+      insert.cobertura_real = data.cobertura_real ?? 0;
+      insert.continuidad_meta = data.continuidad_meta ?? 0;
+      insert.continuidad_real = data.continuidad_real ?? 0;
+      insert.micromedicion_meta = data.micromedicion_meta ?? 0;
+      insert.micromedicion_real = data.micromedicion_real ?? 0;
     } else {
       // Copiar el resto evitando duplicar claves base
       Object.keys(data).forEach(k => {
@@ -417,6 +444,9 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
             delete data.servicio;
             delete data.periodo;
             delete data.mes;
+        } else if (tabla === 'metas_calidad') {
+            delete data.servicio;
+            delete data.periodo;
         }
 
         // Eliminar campos no actualizables
