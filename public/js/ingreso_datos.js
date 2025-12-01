@@ -291,6 +291,55 @@
                 { nombre: 'micromedicion_real', label: 'Micromedición Real (%)', tipo: 'number', step: '0.01' }
             ],
             columnas: ['ID','Vigencia','Periodo','Servicio','Cob Meta','Cob Real','Cont Meta','Cont Real','Micro Meta','Micro Real','Acciones']
+        },
+        cuestionario: {
+            tabla: 'cuestionario',
+            idColumn: 'id_metas',
+            titulo: 'Cuestionario',
+            soloAA: true,
+            periodoAnual: true,
+            unico: true,
+            campos: [
+                { nombre: 'cumplimiento_pueaa', label: 'Cumplimiento PUEAA', tipo: 'select',
+                  opciones: [
+                    { value: 'cumplió', label: 'Cumplió' },
+                    { value: 'no cumplió', label: 'No cumplió' }
+                  ]
+                },
+                { nombre: 'aprobacion_psmv', label: 'Aprobación PSMV', tipo: 'select',
+                  opciones: [
+                    { value: 'No se ha Presentado o no reporta información', label: 'No se ha Presentado o no reporta información' },
+                    { value: 'El PSMV fue Presentado y se espera aprobación', label: 'El PSMV fue Presentado y se espera aprobación' },
+                    { value: 'El PMSV se encuentra Aprobado', label: 'El PMSV se encuentra Aprobado' },
+                    { value: 'El prestador cuenta con un Permiso de Vertimientos', label: 'El prestador cuenta con un Permiso de Vertimientos' }
+                  ]
+                },
+                { nombre: 'cumplimiento_psmv', label: 'Cumplimiento PSMV', tipo: 'select',
+                  opciones: [
+                    { value: 'No se cumplió lo establecido por el PSMV para el periodo de evaluación', label: 'No se cumplió lo establecido por el PSMV para el periodo de evaluación' },
+                    { value: 'Si se cumplió lo establecido por el PSMV para el periodo de evaluación', label: 'Si se cumplió lo establecido por el PSMV para el periodo de evaluación' }
+                  ]
+                },
+                // Cambiado de 'checkbox-group' a 'select'
+                { nombre: 'pec', label: 'PEC', tipo: 'select',
+                  opciones: [
+                    { value: '1', label: 'Aseguramiento de infraestructura' },
+                    { value: '2', label: 'Identificación de amenazas' },
+                    { value: '3', label: 'Registro de eventos' },
+                    { value: '4', label: 'Inventario' },
+                    { value: '5', label: 'Reporte del PEC en el SUI' }
+                  ]
+                },
+                { nombre: 'catastro_medidores', label: 'Catastro de Medidores', tipo: 'select',
+                  opciones: [
+                    { value: 'Si', label: 'Si' },
+                    { value: 'No', label: 'No' }
+                  ]
+                },
+                { nombre: 'indicadores_pgr_reportados', label: 'Indicadores PGR Reportados', tipo: 'number', step: '1' },
+                { nombre: 'indicadores_total', label: 'Indicadores Total', tipo: 'number', step: '1' }
+            ],
+            columnas: ['ID','Vigencia','Periodo','Servicio','PUEAA','Aprob PSMV','Cumpl PSMV','PEC','Cat Med','Ind PGR','Ind Total','Acciones']
         }
     };
 
@@ -608,7 +657,7 @@
 
         // Generar campos dinámicos
         const config = window.currentConfig;
-        if (config && config.campos) {  // ← corregido
+        if (config && config.campos) {
             config.campos.forEach(campo => {
                 const div = document.createElement('div');
                 div.className = 'form-group';
@@ -616,7 +665,9 @@
                 label.textContent = campo.label;
                 label.setAttribute('for', campo.nombre);
                 div.appendChild(label);
-                let input;
+
+                let input; // ← se usará solo si aplica
+
                 if (campo.tipo === 'select' && campo.opciones) {
                     input = document.createElement('select');
                     input.id = campo.nombre;
@@ -634,6 +685,22 @@
                         option.textContent = opcion.label;
                         input.appendChild(option);
                     });
+                    div.appendChild(input); // ← agregar input aquí
+                } else if (campo.tipo === 'checkbox-group') {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'checkbox-group';
+                    campo.opciones.forEach(op => {
+                        const wrap = document.createElement('label');
+                        wrap.className = 'chk-inline';
+                        const chk = document.createElement('input');
+                        chk.type = 'checkbox';
+                        chk.name = campo.nombre;
+                        chk.value = op.value;
+                        wrap.appendChild(chk);
+                        wrap.appendChild(document.createTextNode(op.label));
+                        groupDiv.appendChild(wrap);
+                    });
+                    div.appendChild(groupDiv); // ← no hay input; solo groupDiv
                 } else {
                     input = document.createElement('input');
                     input.type = campo.tipo || 'text';
@@ -644,8 +711,9 @@
                     if (campo.max !== undefined) input.max = campo.max;
                     if (campo.step !== undefined) input.step = campo.step;
                     if (campo.placeholder) input.placeholder = campo.placeholder;
+                    div.appendChild(input); // ← agregar input aquí
                 }
-                div.appendChild(input);
+
                 camposDinamicos.appendChild(div);
             });
         }
@@ -717,6 +785,14 @@
                 datos[campo.nombre] = valor ? Number(valor) : 0;
             } else {
                 datos[campo.nombre] = valor || '';
+            }
+        });
+
+        // Recolectar valores de checkbox-group
+        config.campos.forEach(campo => {
+            if (campo.tipo === 'checkbox-group') {
+                const seleccionados = [...document.querySelectorAll(`input[name="${campo.nombre}"]:checked`)].map(i => i.value);
+                datos[campo.nombre] = seleccionados.join(','); // CSV
             }
         });
 
@@ -853,45 +929,68 @@
             config.campos.forEach(campo => {
                 const div = document.createElement('div');
                 div.className = 'form-group';
-                
+
                 const label = document.createElement('label');
                 label.textContent = campo.label;
                 label.setAttribute('for', campo.nombre);
                 div.appendChild(label);
 
-                let input;
-                
                 // Manejo de campo tipo select
                 if (campo.tipo === 'select' && campo.opciones) {
-                    input = document.createElement('select');
+                    const input = document.createElement('select');
                     input.id = campo.nombre;
                     input.name = campo.nombre;
                     input.required = true;
-                    
+
+                    // placeholder opcional
+                    const ph = document.createElement('option');
+                    ph.value = '';
+                    ph.textContent = 'Seleccione...';
+                    ph.disabled = true;
+                    input.appendChild(ph);
+
                     campo.opciones.forEach(opcion => {
                         const option = document.createElement('option');
                         option.value = opcion.value;
                         option.textContent = opcion.label;
-                        if (dato[campo.nombre] === opcion.value) {
-                            option.selected = true;
-                        }
+                        if (dato[campo.nombre] === opcion.value) option.selected = true;
                         input.appendChild(option);
                     });
+
+                    div.appendChild(input); // ← solo aquí
+                } else if (campo.tipo === 'checkbox-group') {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'checkbox-group';
+                    const seleccionados = (dato[campo.nombre] || '').split(',').map(s => s.trim());
+
+                    campo.opciones.forEach(op => {
+                        const wrap = document.createElement('label');
+                        wrap.className = 'chk-inline';
+                        const chk = document.createElement('input');
+                        chk.type = 'checkbox';
+                        chk.name = campo.nombre;
+                        chk.value = op.value;
+                        if (seleccionados.includes(op.value)) chk.checked = true;
+                        wrap.appendChild(chk);
+                        wrap.appendChild(document.createTextNode(op.label));
+                        groupDiv.appendChild(wrap);
+                    });
+
+                    div.appendChild(groupDiv); // ← no hay input; agregar el grupo
                 } else {
                     // Campos normales
-                    input = document.createElement('input');
+                    const input = document.createElement('input');
                     input.type = campo.tipo || 'text';
                     input.id = campo.nombre;
                     input.name = campo.nombre;
                     input.required = true;
-                    input.value = dato[campo.nombre] || 0;
-                    
+                    input.value = dato[campo.nombre] ?? '';
                     if (campo.min !== undefined) input.min = campo.min;
                     if (campo.max !== undefined) input.max = campo.max;
                     if (campo.step !== undefined) input.step = campo.step;
+                    div.appendChild(input); // ← solo aquí
                 }
-                
-                div.appendChild(input);
+
                 camposDinamicos.appendChild(div);
             });
 
@@ -1166,6 +1265,8 @@
                     vistaHTML = '/views/cliente/ingreso_datos/irca.html';
                 } else if (variable === 'metas_calidad') {
                     vistaHTML = '/views/cliente/ingreso_datos/metas_calidad.html';
+                } else if (variable === 'cuestionario') {
+                    vistaHTML = '/views/cliente/ingreso_datos/cuestionario.html';
                 }
 
                 console.log('[btnConsultar] Cargando vista:', vistaHTML);

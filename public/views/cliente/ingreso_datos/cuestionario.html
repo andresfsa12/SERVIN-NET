@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cuestionario</title>
+  <link rel="stylesheet" href="/css/ingreso_datos.css">
+</head>
+<body>
+  <div class="datos-container">
+    <div class="table-header">
+      <h2 id="titulo-tabla">Cuestionario</h2>
+      <button type="button" class="btn-action btn-nuevo" id="btnNuevo">Nuevo Registro</button>
+    </div>
+    <table class="datos-table" id="tablaDatos">
+      <thead id="theadDatos"></thead>
+      <tbody id="tbodyDatos">
+        <tr><td colspan="12" class="no-data">Sin datos. Use Consultar.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="modalDatos" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2 id="modalTitle">Nuevo Registro</h2>
+      <form id="formDatos">
+        <input type="hidden" id="id_registro" name="id_registro">
+
+        <div class="form-group">
+          <label>Vigencia</label>
+          <input type="text" id="modal_vigencia" name="vigencia" readonly>
+        </div>
+        <div class="form-group">
+          <label>Periodo</label>
+          <input type="text" id="modal_mes" name="mes" readonly>
+        </div>
+        <div class="form-group">
+          <label>Servicio</label>
+          <input type="text" id="modal_servicio" name="servicio" readonly>
+        </div>
+
+        <div id="campos-dinamicos"></div>
+
+        <div class="form-buttons">
+          <button type="submit" class="btn-save">Guardar</button>
+          <button type="button" class="btn-cancel" id="btnCancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

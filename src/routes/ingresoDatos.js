@@ -28,7 +28,8 @@ const idColumnMap = {
     tarifa_acu: 'id_tarifas_acu',
     tarifa_alc: 'id_tarifas_alc',
     irca: 'id_irca',
-    metas_calidad: 'id_metas'
+    metas_calidad: 'id_metas',
+    cuestionario: 'id_metas'
 };
 
 const tablasValidas = [
@@ -49,8 +50,11 @@ const tablasValidas = [
     'tarifa_acu',
     'tarifa_alc',
     'irca',
-    'metas_calidad'
+    'metas_calidad',
+    'cuestionario'
 ];
+
+const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad','cuestionario'];
 
 // 1. Rutas genéricas (aplican a todas las tablas)
 // GET - Consultar datos (añadir validación vigencia antes de reglas específicas)
@@ -176,11 +180,16 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
             if (servicio !== 'aa') return res.status(400).json({ success:false, message:'Metas de Calidad solo admite servicio Ambos (aa)' });
         }
 
+        // Cuestionario
+        if (tabla === 'cuestionario') {
+            if (mes !== 'Anual') return res.status(400).json({ success:false, message:'Cuestionario solo admite periodo Anual' });
+            if (servicio !== 'aa') return res.status(400).json({ success:false, message:'Cuestionario solo admite servicio Ambos (aa)' });
+        }
+
         let query = `SELECT * FROM ${tabla} WHERE id_usuarioFK = ? AND id_vigenciaFK = ?`;
         const params = [userId, vigencia];
 
         // Campo periodo vs mes
-        const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad'];
         if (TABLAS_USAN_PERIODO.includes(tabla)) {
             query += ' AND periodo = ?';
             params.push(mes);
@@ -359,9 +368,19 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
         if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Metas de Calidad. Use Editar.' });
     }
 
-    // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
-    const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad'];
+    // Cuestionario
+    if (tabla === 'cuestionario') {
+        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Cuestionario requiere periodo Anual' });
+        if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Cuestionario requiere servicio Ambos (aa)' });
+        const [exist] = await connection.execute(
+            `SELECT id_metas FROM cuestionario
+             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+            [userId, data.vigencia]
+        );
+        if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual Cuestionario. Use Editar.' });
+    }
 
+    // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
     let insert = {
       id_usuarioFK: userId,
       id_vigenciaFK: data.vigencia,
@@ -389,6 +408,14 @@ router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
       insert.continuidad_real = data.continuidad_real ?? 0;
       insert.micromedicion_meta = data.micromedicion_meta ?? 0;
       insert.micromedicion_real = data.micromedicion_real ?? 0;
+    } else if (tabla === 'cuestionario') {
+      insert.cumplimiento_pueaa = data.cumplimiento_pueaa || '';
+      insert.aprobacion_psmv = data.aprobacion_psmv || '';
+      insert.cumplimiento_psmv = data.cumplimiento_psmv || '';
+      insert.pec = data.pec || ''; // CSV
+      insert.catastro_medidores = data.catastro_medidores || '';
+      insert.indicadores_pgr_reportados = data.indicadores_pgr_reportados ?? 0;
+      insert.indicadores_total = data.indicadores_total ?? 0;
     } else {
       // Copiar el resto evitando duplicar claves base
       Object.keys(data).forEach(k => {
@@ -447,6 +474,10 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
         } else if (tabla === 'metas_calidad') {
             delete data.servicio;
             delete data.periodo;
+        } else if (tabla === 'cuestionario') {
+            delete data.servicio;
+            delete data.periodo;
+            delete data.mes;
         }
 
         // Eliminar campos no actualizables
