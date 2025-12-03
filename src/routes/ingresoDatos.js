@@ -213,229 +213,227 @@ router.get('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
 
 // POST - Crear registro (reemplazar bloque desde const insert = ...)
 router.post('/api/ingreso-datos/:tabla', requireAuth, async (req, res) => {
-  try {
-    const { tabla } = req.params;
-    const userId = req.session.userId;
-    const data = { ...req.body };
+    try {
+        const { tabla } = req.params;
+        const userId = req.session.userId;
+        const data = { ...req.body };
 
-    console.log(`[POST /api/ingreso-datos/${tabla}] Body:`, data);
+        // Remover campos que no deben ir en INSERT
+        delete data.id;
+        delete data.id_registro;
+        delete data.id_usuarioFK;
+        delete data.id_vigenciaFK;
 
-    if (!tablasValidas.includes(tabla)) {
-        return res.status(400).json({ success: false, message: `Tabla no válida: ${tabla}` });
-    }
-
-    // Validar vigencia
-    const [vigenciaExists] = await connection.execute(
-        'SELECT id_vigencia FROM vigencia WHERE id_vigencia = ?',
-        [data.vigencia]
-    );
-    if (!vigenciaExists.length) {
-        return res.status(400).json({
-            success: false,
-            message: `La vigencia ${data.vigencia} no existe en la base de datos. Contacte al administrador.`
-        });
-    }
-
-    // Validaciones específicas (dejando las que ya tienes)
-    if (tabla === 'pqr' && data.mes === 'Anual') {
-        return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
-    }
-
-    // Personal (único anual)
-    if (tabla === 'personal') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Personal requiere periodo Anual' });
-        if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Personal requiere servicio "Ambos" (aa)' });
-        const [existPersonal] = await connection.execute(
-            `SELECT id_personal FROM personal WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual'`,
-            [userId, data.vigencia]
+        // Validar vigencia
+        const [vigenciaExists] = await connection.execute(
+            'SELECT id_vigencia FROM vigencia WHERE id_vigencia = ?',
+            [data.vigencia]
         );
-        if (existPersonal.length) {
-            return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Personal para esta vigencia. Use la opción Editar.' });
-        }
-    }
-
-    // Financiero (único anual)
-    if (tabla === 'financiero') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Financiero requiere periodo Anual' });
-        if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Financiero requiere servicio "Ambos" (aa)' });
-        const [existFin] = await connection.execute(
-            `SELECT id_financiero FROM financiero WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
-            [userId, data.vigencia]
-        );
-        if (existFin.length) {
-            return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Financiero para esta vigencia. Use la opción Editar.' });
-        }
-    }
-
-    // Eventos Climáticos (único anual)
-    if (tabla === 'eventos_climaticos') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere periodo Anual' });
-        if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere servicio "aa"' });
-        const [existEv] = await connection.execute(
-            `SELECT id_eventos_c FROM eventos_climaticos
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
-            [userId, data.vigencia]
-        );
-        if (existEv.length) {
-            return res.status(400).json({ success:false, message:'Ya existe registro anual de Eventos Climáticos. Use Editar.' });
-        }
-    }
-
-    // Energía
-    if (tabla === 'energia') {
-        if (data.mes === 'Anual') {
-            return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
-        }
-        if (data.servicio !== 'acueducto' && data.servicio !== 'alcantarillado') {
-            return res.status(400).json({ success: false, message: 'Energía requiere servicio acueducto o alcantarillado (no ambos)' });
-        }
-        
-        const [existEnergia] = await connection.execute(
-            `SELECT id_energia FROM energia 
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
-            [userId, data.vigencia, data.mes, data.servicio]
-        );
-        if (existEnergia.length) {
-            return res.status(400).json({ 
-                success: false, 
-                message: `Ya existe un registro de Energía para ${data.servicio} en esta vigencia y mes. Use la opción Editar.` 
+        if (!vigenciaExists.length) {
+            return res.status(400).json({
+                success: false,
+                message: `La vigencia ${data.vigencia} no existe en la base de datos. Contacte al administrador.`
             });
         }
-    }
 
-    // Red Acueducto
-    if (tabla === 'redacueducto') {
-        if (data.mes !== 'Anual') {
-            return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo Anual' });
+        // Validaciones específicas (dejando las que ya tienes)
+        if (tabla === 'pqr' && data.mes === 'Anual') {
+            return res.status(400).json({ success: false, message: 'PQR no admite periodo Anual' });
         }
-        if (data.servicio !== 'acueducto') {
-            return res.status(400).json({ success: false, message: 'Red de Acueducto requiere servicio acueducto' });
+
+        // Personal (único anual)
+        if (tabla === 'personal') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Personal requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Personal requiere servicio "Ambos" (aa)' });
+            const [existPersonal] = await connection.execute(
+                `SELECT id_personal FROM personal WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual'`,
+                [userId, data.vigencia]
+            );
+            if (existPersonal.length) {
+                return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Personal para esta vigencia. Use la opción Editar.' });
+            }
         }
-        
-        const [existRA] = await connection.execute(
-            `SELECT id_redAcueducto FROM redacueducto 
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'Anual' AND servicio = 'acueducto'`,
-            [userId, data.vigencia]
-        );
-        if (existRA.length) {
-            return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Red de Acueducto para esta vigencia. Use Editar.' });
+
+        // Financiero (único anual)
+        if (tabla === 'financiero') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success: false, message: 'Financiero requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success: false, message: 'Financiero requiere servicio "Ambos" (aa)' });
+            const [existFin] = await connection.execute(
+                `SELECT id_financiero FROM financiero WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (existFin.length) {
+                return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Financiero para esta vigencia. Use la opción Editar.' });
+            }
         }
+
+        // Eventos Climáticos (único anual)
+        if (tabla === 'eventos_climaticos') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Eventos Climáticos requiere servicio "aa"' });
+            const [existEv] = await connection.execute(
+                `SELECT id_eventos_c FROM eventos_climaticos
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (existEv.length) {
+                return res.status(400).json({ success:false, message:'Ya existe registro anual de Eventos Climáticos. Use Editar.' });
+            }
+        }
+
+        // Energía
+        if (tabla === 'energia') {
+            if (data.mes === 'Anual') {
+                return res.status(400).json({ success: false, message: 'Energía no admite periodo Anual' });
+            }
+            if (data.servicio !== 'acueducto' && data.servicio !== 'alcantarillado') {
+                return res.status(400).json({ success: false, message: 'Energía requiere servicio acueducto o alcantarillado (no ambos)' });
+            }
+            
+            const [existEnergia] = await connection.execute(
+                `SELECT id_energia FROM energia 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = ? AND servicio = ?`,
+                [userId, data.vigencia, data.mes, data.servicio]
+            );
+            if (existEnergia.length) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Ya existe un registro de Energía para ${data.servicio} en esta vigencia y mes. Use la opción Editar.` 
+                });
+            }
+        }
+
+        // Red Acueducto
+        if (tabla === 'redacueducto') {
+            if (data.mes !== 'Anual') {
+                return res.status(400).json({ success: false, message: 'Red de Acueducto requiere periodo Anual' });
+            }
+            if (data.servicio !== 'acueducto') {
+                return res.status(400).json({ success: false, message: 'Red de Acueducto requiere servicio acueducto' });
+            }
+            
+            const [existRA] = await connection.execute(
+                `SELECT id_redAcueducto FROM redacueducto 
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND mes = 'Anual' AND servicio = 'acueducto'`,
+                [userId, data.vigencia]
+            );
+            if (existRA.length) {
+                return res.status(400).json({ success: false, message: 'Ya existe un registro anual de Red de Acueducto para esta vigencia. Use Editar.' });
+            }
+        }
+
+        // Tarifa Acueducto
+        if (tabla === 'tarifa_acu') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere periodo Anual' });
+            if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere servicio acueducto' });
+            const [existTarifa] = await connection.execute(
+                `SELECT id_tarifas_acu FROM tarifa_acu
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
+                [userId, data.vigencia]
+            );
+            if (existTarifa.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Acueducto. Use Editar.' });
+        }
+
+        // Tarifa Alcantarillado
+        if (tabla === 'tarifa_alc') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere periodo Anual' });
+            if (data.servicio !== 'alcantarillado') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere servicio alcantarillado' });
+            const [existAlc] = await connection.execute(
+                `SELECT id_tarifas_alc FROM tarifa_alc
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'alcantarillado'`,
+                [userId, data.vigencia]
+            );
+            if (existAlc.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Alcantarillado. Use Editar.' });
+        }
+
+        // IRCA
+        if (tabla === 'irca') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'IRCA requiere periodo Anual' });
+            if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'IRCA requiere servicio acueducto' });
+            const [existIrca] = await connection.execute(
+                `SELECT id_irca FROM irca WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
+                [userId, data.vigencia]
+            );
+            if (existIrca.length) return res.status(400).json({ success:false, message:'Ya existe registro anual IRCA. Use Editar.' });
+        }
+
+        // Metas de Calidad
+        if (tabla === 'metas_calidad') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Metas de Calidad requieren periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Metas de Calidad requieren servicio Ambos (aa)' });
+            const [exist] = await connection.execute(
+                `SELECT id_metas FROM metas_calidad WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Metas de Calidad. Use Editar.' });
+        }
+
+        // Cuestionario
+        if (tabla === 'cuestionario') {
+            if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Cuestionario requiere periodo Anual' });
+            if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Cuestionario requiere servicio Ambos (aa)' });
+            const [exist] = await connection.execute(
+                `SELECT id_metas FROM cuestionario
+                 WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
+                [userId, data.vigencia]
+            );
+            if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual Cuestionario. Use Editar.' });
+        }
+
+        // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
+        let insert = {
+            id_usuarioFK: userId,
+            id_vigenciaFK: data.vigencia,
+            servicio: data.servicio
+        };
+
+        // Mapear periodo/mes según tabla
+        if (TABLAS_USAN_PERIODO.includes(tabla)) {
+            insert.periodo = data.mes;
+        } else {
+            insert.mes = data.mes;
+        }
+
+        // Campos específicos
+        if (tabla === 'tarifa_acu' || tabla === 'tarifa_alc') {
+            insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
+            insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
+            insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
+            insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
+        } else if (tabla === 'irca') {
+            insert.resultado = data.resultado ?? 0;
+        } else if (tabla === 'metas_calidad') {
+            insert.cobertura_meta = data.cobertura_meta ?? 0;
+            insert.cobertura_real = data.cobertura_real ?? 0;
+            insert.continuidad_meta = data.continuidad_meta ?? 0;
+            insert.continuidad_real = data.continuidad_real ?? 0;
+            insert.micromedicion_meta = data.micromedicion_meta ?? 0;
+            insert.micromedicion_real = data.micromedicion_real ?? 0;
+        } else if (tabla === 'cuestionario') {
+            insert.cumplimiento_pueaa = data.cumplimiento_pueaa || '';
+            insert.aprobacion_psmv    = data.aprobacion_psmv || '';
+            insert.cumplimiento_psmv  = data.cumplimiento_psmv || '';
+            insert.pec                = data.pec || '';
+            insert.catastro_medidores = data.catastro_medidores || '';
+            insert.indicadores_pgr_reportados = data.indicadores_pgr_reportados ?? 0;
+            insert.indicadores_total         = data.indicadores_total ?? 0;
+        } else {
+            // Copiar genéricos evitando claves base
+            Object.keys(data).forEach(k => {
+                if (!['vigencia','mes','servicio'].includes(k)) insert[k] = data[k];
+            });
+        }
+
+        const cols = Object.keys(insert);
+        const vals = Object.values(insert);
+        const placeholders = cols.map(() => '?').join(', ');
+        const sql = `INSERT INTO ${tabla} (${cols.join(', ')}) VALUES (${placeholders})`;
+
+        const [r] = await connection.execute(sql, vals);
+        return res.json({ success: true, id: r.insertId, message: 'Registro creado correctamente' });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Error al crear: ' + err.message });
     }
-
-    // Tarifa Acueducto
-    if (tabla === 'tarifa_acu') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere periodo Anual' });
-        if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'Tarifa Acueducto requiere servicio acueducto' });
-        const [existTarifa] = await connection.execute(
-            `SELECT id_tarifas_acu FROM tarifa_acu
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
-            [userId, data.vigencia]
-        );
-        if (existTarifa.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Acueducto. Use Editar.' });
-    }
-
-    // Tarifa Alcantarillado
-    if (tabla === 'tarifa_alc') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere periodo Anual' });
-        if (data.servicio !== 'alcantarillado') return res.status(400).json({ success:false, message:'Tarifa Alcantarillado requiere servicio alcantarillado' });
-        const [existAlc] = await connection.execute(
-            `SELECT id_tarifas_alc FROM tarifa_alc
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'alcantarillado'`,
-            [userId, data.vigencia]
-        );
-        if (existAlc.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Tarifa Alcantarillado. Use Editar.' });
-    }
-
-    // IRCA
-    if (tabla === 'irca') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'IRCA requiere periodo Anual' });
-        if (data.servicio !== 'acueducto') return res.status(400).json({ success:false, message:'IRCA requiere servicio acueducto' });
-        const [existIrca] = await connection.execute(
-            `SELECT id_irca FROM irca WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'acueducto'`,
-            [userId, data.vigencia]
-        );
-        if (existIrca.length) return res.status(400).json({ success:false, message:'Ya existe registro anual IRCA. Use Editar.' });
-    }
-
-    // Metas de Calidad
-    if (tabla === 'metas_calidad') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Metas de Calidad requiere periodo Anual' });
-        if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Metas de Calidad requiere servicio Ambos (aa)' });
-        const [exist] = await connection.execute(
-            `SELECT id_metas FROM metas_calidad WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
-            [userId, data.vigencia]
-        );
-        if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual de Metas de Calidad. Use Editar.' });
-    }
-
-    // Cuestionario
-    if (tabla === 'cuestionario') {
-        if (data.mes !== 'Anual') return res.status(400).json({ success:false, message:'Cuestionario requiere periodo Anual' });
-        if (data.servicio !== 'aa') return res.status(400).json({ success:false, message:'Cuestionario requiere servicio Ambos (aa)' });
-        const [exist] = await connection.execute(
-            `SELECT id_metas FROM cuestionario
-             WHERE id_usuarioFK = ? AND id_vigenciaFK = ? AND periodo = 'Anual' AND servicio = 'aa'`,
-            [userId, data.vigencia]
-        );
-        if (exist.length) return res.status(400).json({ success:false, message:'Ya existe registro anual Cuestionario. Use Editar.' });
-    }
-
-    // Construcción del INSERT unificada (evita incluir "mes" en tablas con "periodo")
-    let insert = {
-      id_usuarioFK: userId,
-      id_vigenciaFK: data.vigencia,
-      servicio: data.servicio
-    };
-
-    if (TABLAS_USAN_PERIODO.includes(tabla)) {
-      insert.periodo = data.mes;  // mapear mes -> periodo
-    } else {
-      insert.mes = data.mes;      // tablas que sí guardan "mes"
-    }
-
-    // Campos específicos
-    if (tabla === 'tarifa_acu' || tabla === 'tarifa_alc') {
-      insert.tarifa_cf_aprob = data.tarifa_cf_aprob ?? 0;
-      insert.tarifa_cf_fact  = data.tarifa_cf_fact  ?? 0;
-      insert.tarifa_cc_aprob = data.tarifa_cc_aprob ?? 0;
-      insert.tarifa_cc_fact  = data.tarifa_cc_fact  ?? 0;
-    } else if (tabla === 'irca') {
-      insert.resultado = data.resultado ?? 0;
-    } else if (tabla === 'metas_calidad') {
-      insert.cobertura_meta = data.cobertura_meta ?? 0;
-      insert.cobertura_real = data.cobertura_real ?? 0;
-      insert.continuidad_meta = data.continuidad_meta ?? 0;
-      insert.continuidad_real = data.continuidad_real ?? 0;
-      insert.micromedicion_meta = data.micromedicion_meta ?? 0;
-      insert.micromedicion_real = data.micromedicion_real ?? 0;
-    } else if (tabla === 'cuestionario') {
-      insert.cumplimiento_pueaa = data.cumplimiento_pueaa || '';
-      insert.aprobacion_psmv = data.aprobacion_psmv || '';
-      insert.cumplimiento_psmv = data.cumplimiento_psmv || '';
-      insert.pec = data.pec || ''; // CSV
-      insert.catastro_medidores = data.catastro_medidores || '';
-      insert.indicadores_pgr_reportados = data.indicadores_pgr_reportados ?? 0;
-      insert.indicadores_total = data.indicadores_total ?? 0;
-    } else {
-      // Copiar el resto evitando duplicar claves base
-      Object.keys(data).forEach(k => {
-        if (!['vigencia','mes','servicio'].includes(k)) insert[k] = data[k];
-      });
-    }
-
-    const cols = Object.keys(insert);
-    const vals = Object.values(insert);
-    const placeholders = cols.map(() => '?').join(', ');
-    const query = `INSERT INTO ${tabla} (${cols.join(', ')}) VALUES (${placeholders})`;
-
-    console.log(`[POST /api/ingreso-datos/${tabla}] Query:`, query);
-    console.log(`[POST /api/ingreso-datos/${tabla}] Values:`, vals);
-
-    const [r] = await connection.execute(query, vals);
-    return res.json({ success: true, id: r.insertId, message: 'Registro creado correctamente' });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Error al crear: ' + err.message });
-  }
 });
 
 // PUT - Añadir validación vigencia + reglas tarifa_acu antes de borrar campos
@@ -445,68 +443,36 @@ router.put('/api/ingreso-datos/:tabla/:id', requireAuth, async (req, res) => {
         const userId = req.session.userId;
         const data = { ...req.body };
 
-        if (!tablasValidas.includes(tabla)) {
-            return res.status(400).json({ success: false, message: `Tabla no válida: ${tabla}` });
-        }
-
-        // Validar vigencia si se envía
-        if (data.vigencia) {
-            const [vigenciaExists] = await connection.execute(
-                'SELECT id_vigencia FROM vigencia WHERE id_vigencia = ?',
-                [data.vigencia]
-            );
-            if (!vigenciaExists.length) {
-                return res.status(400).json({
-                    success: false,
-                    message: `La vigencia ${data.vigencia} no existe en la base de datos.`
-                });
-            }
-        }
-
-        if (tabla === 'tarifa_acu' || tabla === 'tarifa_alc') {
-            // Evitar cambio de servicio/periodo en update
-            delete data.servicio;
-            delete data.periodo;
-        } else if (tabla === 'irca') {
-            delete data.servicio;
-            delete data.periodo;
-            delete data.mes;
-        } else if (tabla === 'metas_calidad') {
-            delete data.servicio;
-            delete data.periodo;
-        } else if (tabla === 'cuestionario') {
-            delete data.servicio;
-            delete data.periodo;
-            delete data.mes;
-        }
-
-        // Eliminar campos no actualizables
+        // Limpiar campos que no deben actualizarse
         delete data.id;
-        delete data.vigencia;
-        delete data.mes;
+        delete data.id_registro;
         delete data.id_usuarioFK;
         delete data.id_vigenciaFK;
+        delete data.vigencia;
+
+        const TABLAS_USAN_PERIODO = ['personal','financiero','eventos_climaticos','poir','tarifa_acu','tarifa_alc','irca','metas_calidad','cuestionario'];
+        if (TABLAS_USAN_PERIODO.includes(tabla)) delete data.mes;
+
+        if (tabla === 'tarifa_acu' || tabla === 'tarifa_alc' || tabla === 'irca' || tabla === 'metas_calidad' || tabla === 'cuestionario') {
+            delete data.servicio;
+            delete data.periodo;
+        }
 
         if (Object.keys(data).length === 0) {
             return res.status(400).json({ success: false, message: 'No hay datos para actualizar' });
         }
 
-        const setClause = Object.keys(data).map(k => `${k} = ?`).join(', ');
-        const values = [...Object.values(data), id, userId];
+        const setCols = Object.keys(data).map(k => `${k} = ?`).join(', ');
+        const vals = [...Object.values(data), id, userId];
+
         const idCol = idColumnMap[tabla];
-        const query = `UPDATE ${tabla} SET ${setClause} WHERE ${idCol} = ? AND id_usuarioFK = ?`;
+        const sql = `UPDATE ${tabla} SET ${setCols} WHERE ${idCol} = ? AND id_usuarioFK = ?`;
 
-        console.log(`[PUT /api/ingreso-datos/${tabla}] Query:`, query);
-        console.log(`[PUT /api/ingreso-datos/${tabla}] Values:`, values);
-
-        const [result] = await connection.execute(query, values);
-        if (!result.affectedRows) {
-            return res.status(404).json({ success: false, message: 'Registro no encontrado o no autorizado' });
-        }
-        res.json({ success: true, message: 'Registro actualizado correctamente' });
-    } catch (error) {
-        console.error(`[PUT /api/ingreso-datos] Error:`, error);
-        res.status(500).json({ success: false, message: 'Error al actualizar: ' + error.message });
+        const [r] = await connection.execute(sql, vals);
+        if (!r.affectedRows) return res.status(404).json({ success: false, message: 'Registro no encontrado' });
+        return res.json({ success: true, message: 'Registro actualizado correctamente' });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Error al actualizar: ' + err.message });
     }
 });
 

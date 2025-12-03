@@ -122,6 +122,12 @@ async function loadMenu(role) {
         if (!menuContainer) throw new Error('Contenedor de menú no encontrado');
         menuContainer.innerHTML = html;
 
+          // Llamar init del dashboard después de insertar el HTML
+  if (window.DashboardPanel && typeof window.DashboardPanel.init === 'function') {
+    window.DashboardPanel.init();
+  }
+
+
         // Actualizar info de usuario desde sesión
         await updateUserInfo();
 

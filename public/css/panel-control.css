@@ -198,3 +198,122 @@
                 align-items: center;
                 justify-content: center;
             }
+
+.dashboard-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.avance-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.avance-header h2 {
+    margin: 0;
+    font-size: 2em;
+    font-weight: 600;
+}
+
+.avance-porcentaje {
+    font-size: 3.5em;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.avance-info {
+    background: #f8f9fa;
+    padding: 15px 30px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.avance-info p {
+    margin: 8px 0;
+    color: #495057;
+    font-size: 1.05em;
+}
+
+.variables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.variable-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #ddd;
+}
+
+.variable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.variable-card.reportado {
+    border-left-color: #28a745;
+}
+
+.variable-card.no-reportado {
+    border-left-color: #ffc107;
+}
+
+.variable-nombre {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 12px;
+}
+
+.variable-estado {
+    margin-bottom: 8px;
+}
+
+.estado-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.variable-registros {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.2em;
+    color: #6c757d;
+}
+
+.error {
+    color: #dc3545;
+}

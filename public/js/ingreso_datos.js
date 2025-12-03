@@ -1,5 +1,71 @@
 // ingreso_datos.js
 (() => {
+  console.log('[ingreso_datos.js] Evaluando script');
+
+  window.guardarRegistro = async function(e) {
+    e.preventDefault();
+    const config = window.currentConfig;
+    if (!config) { alert('Primero consulte la tabla.'); return; }
+
+    const formData = new FormData(e.target);
+    const idRegistro = formData.get('id_registro') || null;
+
+    const datos = {
+      vigencia: window.currentVigencia || formData.get('vigencia'),
+      mes: window.currentPeriodo || formData.get('mes'),
+      servicio: window.currentServicio || formData.get('servicio')
+    };
+
+    (config.campos || []).forEach(campo => {
+      const v = formData.get(campo.nombre);
+      if (campo.tipo === 'number') datos[campo.nombre] = v ? Number(v) : 0;
+      else datos[campo.nombre] = v || '';
+    });
+
+    // limpiar campos que no deben ir
+    delete datos.id;
+    delete datos.id_registro;
+    delete datos.id_usuarioFK;
+    delete datos.id_vigenciaFK;
+
+    const method = idRegistro ? 'PUT' : 'POST';
+    const endpoint = idRegistro
+      ? `/api/ingreso-datos/${config.tabla}/${idRegistro}`
+      : `/api/ingreso-datos/${config.tabla}`;
+
+    try {
+      const resp = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(datos)
+      });
+      const result = await resp.json();
+      if (!result.success) throw new Error(result.message || 'Error al guardar');
+
+      alert(idRegistro ? 'Registro actualizado' : 'Registro creado');
+      window.cerrarModal?.();
+
+      // Reconsultar tabla
+      document.getElementById('btn-consultar')?.click();
+
+      // Asegurar que el dashboard siga funcionando y se actualice
+      if (window.DashboardPanel && typeof window.DashboardPanel.init === 'function') {
+        window.DashboardPanel.init(); // reengancha listeners si hizo falta
+      }
+      document.getElementById('btn-consultar-panel')?.click();
+    } catch (err) {
+      console.error('[guardarRegistro] Error:', err);
+      alert('Error: ' + err.message);
+      // Mantener dashboard accesible aunque haya error
+      if (window.DashboardPanel && typeof window.DashboardPanel.init === 'function') {
+        window.DashboardPanel.init();
+      }
+    }
+  };
+})();
+
+(() => {
     console.log('[ingreso_datos.js] Evaluando script');
 
     if (typeof window.initIngresoDatos === 'function') {
@@ -737,80 +803,50 @@
     // Función para guardar datos
     window.guardarRegistro = async function(e) {
         e.preventDefault();
-        
-        console.log('[guardarRegistro] Iniciando...');
-        console.log('[guardarRegistro] currentConfig disponible:', !!window.currentConfig);
-
-        // Verificar que existe la configuración
         if (!window.currentConfig) {
-            console.error('[guardarRegistro] currentConfig es null');
-            alert('Error: No hay configuración cargada. Realice primero una consulta.');
+            alert('Error: No hay configuración cargada. Consulte primero.');
             return;
         }
 
         const config = window.currentConfig;
-        console.log('[guardarRegistro] Config:', config);
-
         const formData = new FormData(e.target);
-        
-        // CORREGIR: Obtener valores de los campos correctos
+
+        const idRegistro = formData.get('id_registro'); // ← solo para decidir PUT
         const datos = {
-            id: formData.get('id_registro') || null,
-            vigencia: window.currentVigencia || formData.get('vigencia'),  // Usar variable global
-            mes: window.currentPeriodo || formData.get('mes'),             // Usar variable global
-            servicio: window.currentServicio || formData.get('servicio')   // Usar variable global
+            vigencia: window.currentVigencia || formData.get('vigencia'),
+            mes: window.currentPeriodo || formData.get('mes'),
+            servicio: window.currentServicio || formData.get('servicio')
         };
 
-        // Log para debug
-        console.log('[guardarRegistro] Vigencia capturada:', datos.vigencia);
-        console.log('[guardarRegistro] Mes capturado:', datos.mes);
-        console.log('[guardarRegistro] Servicio capturado:', datos.servicio);
-
-        // Validar que los campos requeridos no estén vacíos
         if (!datos.vigencia || !datos.mes || !datos.servicio) {
-            alert('Error: Faltan datos requeridos (vigencia, periodo o servicio)');
-            console.error('[guardarRegistro] Datos faltantes:', datos);
+            alert('Faltan Vigencia / Periodo / Servicio');
             return;
         }
 
-        // Agregar campos específicos
-        config.campos.forEach(campo => {
-            const valor = formData.get(campo.nombre);
-            console.log(`[guardarRegistro] Campo ${campo.nombre}:`, valor);
-            
-            // No convertir a número si es select
-            if (campo.tipo === 'select') {
-                datos[campo.nombre] = valor;
-            } else if (campo.tipo === 'number') {
-                datos[campo.nombre] = valor ? Number(valor) : 0;
-            } else {
-                datos[campo.nombre] = valor || '';
-            }
-        });
-
-        // Recolectar valores de checkbox-group
+        // Agregar campos configurados
         config.campos.forEach(campo => {
             if (campo.tipo === 'checkbox-group') {
-                const seleccionados = [...document.querySelectorAll(`input[name="${campo.nombre}"]:checked`)].map(i => i.value);
-                datos[campo.nombre] = seleccionados.join(','); // CSV
+                const seleccionados = [...document.querySelectorAll(`input[name="${campo.nombre}"]:checked`)]
+                    .map(i => i.value);
+                datos[campo.nombre] = seleccionados.join(',');
+            } else {
+                const v = formData.get(campo.nombre);
+                if (campo.tipo === 'number') datos[campo.nombre] = v ? Number(v) : 0;
+                else datos[campo.nombre] = v || '';
             }
         });
 
-        console.log('[guardarRegistro] Datos finales:', datos);
-        console.log('[guardarRegistro] Tabla:', config.tabla);
+        // IMPORTANTE: NO incluir id en el body para POST
+        // (idRegistro solo decide método y URL)
+        const method = idRegistro ? 'PUT' : 'POST';
+        const endpoint = idRegistro
+            ? `/api/ingreso-datos/${config.tabla}/${idRegistro}`
+            : `/api/ingreso-datos/${config.tabla}`;
 
         try {
-            const method = datos.id ? 'PUT' : 'POST';
-            const endpoint = datos.id 
-                ? `/api/ingreso-datos/${config.tabla}/${datos.id}`
-                : `/api/ingreso-datos/${config.tabla}`;
-
-            console.log('[guardarRegistro] Endpoint:', endpoint);
-            console.log('[guardarRegistro] Method:', method);
-
-            const response = await fetch(endpoint, {
-                method: method,
-                headers: { 
+            const resp = await fetch(endpoint, {
+                method,
+                headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
@@ -818,34 +854,18 @@
                 body: JSON.stringify(datos)
             });
 
-            console.log('[guardarRegistro] Response status:', response.status);
+            const result = await resp.json();
+            if (!result.success) throw new Error(result.message || 'Error al guardar');
 
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const text = await response.text();
-                console.error('[guardarRegistro] Respuesta no JSON:', text.substring(0, 200));
-                throw new Error('El servidor no devolvió JSON');
-            }
-
-            const result = await response.json();
-            console.log('[guardarRegistro] Resultado:', result);
-
-            if (!result.success) {
-                throw new Error(result.message || 'Error al guardar');
-            }
-
-            alert(datos.id ? 'Registro actualizado correctamente' : 'Registro creado correctamente');
+            alert(idRegistro ? 'Actualizado' : 'Creado');
             window.cerrarModal();
 
-            // Recargar datos
+            // Refrescar tabla sin destruir otros componentes (dashboard permanece)
             const btnConsultar = document.getElementById('btn-consultar');
-            if (btnConsultar) {
-                btnConsultar.click();
-            }
-
-        } catch (error) {
-            console.error('[guardarRegistro] Error:', error);
-            alert('Error: ' + error.message);
+            if (btnConsultar) btnConsultar.click();
+        } catch (err) {
+            console.error('[guardarRegistro] Error:', err);
+            alert('Error: ' + err.message);
         }
     };
 
